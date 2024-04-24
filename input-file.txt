@@ -1,0 +1,8 @@
+7
+add $t0, $t1, $t2
+sub $t3, $t4, $t5
+addi $t6, $t7, 10
+and $t8, $t9, $s0
+or $s1, $s2, $s3
+lw $t0, 100($s4)
+sw $t1, 200($s5)
