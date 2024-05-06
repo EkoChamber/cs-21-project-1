@@ -51,9 +51,12 @@ int parse_line(char* line) {
 
 void parse_input_file(const char* filename) {
     FILE* file = fopen(filename, "r");
+    FILE* symboltable = fopen("symboltable.txt", "w");
+    ftruncate(fileno(symboltable), 0);
 
     int num_words = 0;
     int num_line = 0;
+    char* temp[10];
     fscanf(file, "%d", &num_words);
 
     char line[MAX_LINE_LENGTH];
@@ -63,8 +66,10 @@ void parse_input_file(const char* filename) {
         }
         
         if(parse_line(line)){
-            printf("0x%x", num_line + 4194304 - 8);
-            printf("\n");
+            num_line = num_line + 4194304 - 8;
+            sprintf(temp, "%X\n", num_line);
+            fprintf(symboltable, "0x");
+            fprintf(symboltable, temp);
         }
         num_line += 4;
     }
