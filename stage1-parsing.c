@@ -3,14 +3,15 @@
 #include <string.h>
 
 #define MAX_LINE_LENGTH 256
+#define MAX_ARR_SIZE 100
+
+typedef struct instruction_line Inst;
+struct instruction_line{
+    char** instruction;
+};
 
 
-
-int convertToHex(int num){
-
-}
-
-int parse_line(char* line) {
+char** parse_line(char* line) {
 
     char** line_parsed = NULL;
     line_parsed = (char **)malloc(sizeof(char *));
@@ -34,29 +35,34 @@ int parse_line(char* line) {
         line = strtok(NULL, " ,");
     }
 
-    
-    len_str = strlen(line_parsed[0]);
-    if(line_parsed[0][len_str - 1] == ':' ){
-        printf("%s  ", line_parsed[0]);
-        return 1;
-    }
-    else{
-        return 0;
-    }
-    
+    return line_parsed;
+ 
     
 
     
 }
 
-void parse_input_file(const char* filename) {
+char* parse_symbols(char** line){
+    int len_str = strlen((*line));
+    if((*line)[len_str - 1] == ':'){
+        (*line)[len_str - 1] = '\0';
+        return (*line);
+    }
+    else{
+        return NULL;
+    }
+}
+
+void parse_input_file(const char* filename, Inst** instructions) {
     FILE* file = fopen(filename, "r");
     FILE* symboltable = fopen("symboltable.txt", "w");
     ftruncate(fileno(symboltable), 0);
 
     int num_words = 0;
     int num_line = 0;
-    char* temp[10];
+    int temp;
+    char* output[10];
+    char* label;
     fscanf(file, "%d", &num_words);
 
     char line[MAX_LINE_LENGTH];
@@ -64,14 +70,22 @@ void parse_input_file(const char* filename) {
         if (line[strlen(line) - 1] == '\n') {
             line[strlen(line) - 1] = '\0';
         }
+        Inst *parsed_inst = (Inst *)malloc(sizeof(Inst));
         
-        if(parse_line(line)){
-            num_line = num_line + 4194304 - 8;
-            sprintf(temp, "%X\n", num_line);
+        parsed_inst->instruction = parse_line(line);
+        instructions[num_line] = parsed_inst;
+
+        label = parse_symbols(parsed_inst->instruction);
+        
+        if(label != NULL){
+            fprintf(symboltable, label);
+            fprintf(symboltable, "  ");
+            temp = num_line*4 + 4194304 - 8;
+            sprintf(output, "%X\n", temp);
             fprintf(symboltable, "0x");
-            fprintf(symboltable, temp);
+            fprintf(symboltable, output);
         }
-        num_line += 4;
+        num_line++;
     }
 
     
@@ -81,10 +95,20 @@ void parse_input_file(const char* filename) {
 
 int main(int argc, char* argv[]) {
     
+    // instructions is the array that contains the instructions
+    // Inst is the struct I made for instructions
+    // to get a single instruction simply instructions[# of instruction]-< instruction
+    Inst** instructions;
+
+    instructions = calloc(MAX_ARR_SIZE, MAX_LINE_LENGTH);
     
     
-    parse_input_file("input-file-labels.txt");
+    parse_input_file("input-file-labels.txt", instructions);
 
+    for(int i = 0; i < 14; i++){
+        printf("%s", instructions[i]->instruction[0]);
+    }
 
+    free(instructions);
     return 0;
 }
