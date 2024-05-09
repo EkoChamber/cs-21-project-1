@@ -1,8 +1,12 @@
-7
-add $t0, $t1, $t2
-sub $t3, $t4, $t5
-addi $t6, $t7, 10
-and $t8, $t9, $s0
-or $s1, $s2, $s3
-lw $t0, 100($s4)
-sw $t1, 200($s5)
+11
+.include "macros.asm"
+.text
+main: print_str(msg1)
+read_str(name,10)
+print_str(msg2)
+print_str(name)
+exit()
+.data
+allocate_str(msg1,"Enter a string: ")
+allocate_str(msg2,"You entered: ")
+allocate_bytes(name, 10)
