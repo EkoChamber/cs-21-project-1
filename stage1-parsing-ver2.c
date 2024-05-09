@@ -125,9 +125,7 @@ void parse_input_file(const char* filename, Inst** instructions) {
     fclose(file);
 }
 
-// void parse_operands(Inst** instructions)
-
-void symbol_table(int num_lines, Inst** instructions) { // address and print to symboltable.txt
+void symbol_table(int num_lines, Inst** instructions) {
     FILE* symboltable = fopen("symboltable.txt", "w");
     ftruncate(fileno(symboltable), 0);
 
@@ -146,7 +144,6 @@ void symbol_table(int num_lines, Inst** instructions) { // address and print to 
     }
 }
 
-// void instructions_to_binary()
 
 int main(int argc, char* argv[]) {
     FILE* file = fopen("mips.txt", "r");
@@ -160,7 +157,6 @@ int main(int argc, char* argv[]) {
     
     parse_input_file("mips.txt", instructions);
     symbol_table(num_lines, instructions);
-    // parse_operands(instructions);
 
     printf("LABEL\tTYPE\tMNEMONIC ADDRESS\n");
     for (int i=0; i<num_lines; i++) {
