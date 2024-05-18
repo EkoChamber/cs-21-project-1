@@ -7,9 +7,9 @@
 #define MAX_LINE_LENGTH 256
 #define MAX_ARR_SIZE 100
 
-char** split_by_space(char*);
-char** split_by_comma(char*);
+char** split(char*);
 int final_total_lines = 0;
+char *data_array[MAX_ARR_SIZE][3];
 
 char* concat_str(const char* str1, const char* str2);
 
@@ -37,7 +37,7 @@ char* concat_str(const char* str1, const char* str2) {
 }
 
 
-char** split_by_space(char* line) {
+char** split(char* line) {
     char** splitString = (char**)malloc(5 * sizeof(char*));
     char* token = strtok(line, " ,()");
 
@@ -46,6 +46,21 @@ char** split_by_space(char* line) {
         splitString[i] = strdup(token);
 
         token = strtok(NULL, " ,()");
+        i++;
+    }
+    // splitString[i] = NULL; // NULL terminate the array
+    return splitString;
+}
+
+char** split_without_space(char* line) {
+    char** splitString = (char**)malloc(5 * sizeof(char*));
+    char* token = strtok(line, ",()");
+
+    int i = 0;
+    while (token != NULL && i < 5) {
+        splitString[i] = strdup(token);
+
+        token = strtok(NULL, ",()");
         i++;
     }
     // splitString[i] = NULL; // NULL terminate the array
@@ -61,7 +76,7 @@ char** check_macro_pseudo(char* input_str){
     char* label;
     
 
-    str = split_by_space(input_str);
+    str = split(input_str);
 
     // printf("%s\n", str[0]);
 
@@ -184,10 +199,36 @@ char** check_macro_pseudo(char* input_str){
 
 }
 
+
+void parse_data(char *line, int num_data_line){
+    char **parsed_line;
+    char **return_str;
+
+    // printf("%d\n", num_data_line);
+
+    parsed_line = split_without_space(line);
+
+
+    if(strstr(parsed_line[0], ":") != NULL){
+        parsed_line = split(line);
+        
+        data_array[num_data_line][0] = parsed_line[0];
+        data_array[num_data_line][1] = parsed_line[2];
+    }
+    else{
+        for(int i = 0; i < 2; i++){
+            data_array[num_data_line][i] = parsed_line[i+1];
+        }
+    }
+
+}
+
 void parse_input_file(const char* filename, Inst** instructions) {
     FILE* file = fopen(filename, "r");
 
     int num_lines = 0;
+    int num_data_line = 0;
+    int is_data_seg = 0;
     fscanf(file, "%d", &num_lines);
 
     char line[MAX_LINE_LENGTH];
@@ -224,85 +265,105 @@ void parse_input_file(const char* filename, Inst** instructions) {
         if(to_parse[0] == "not macro"){
             to_parse[0] = strdup(line);
         }
-
-
-        for(int a = 0; a <= len_pseudo; a++){
-            //to_parse[a] has the line to parse
-            //there will be problems with num_lines because input number of lines is not the same as
-            //new number of lines with parsed macros since itll be much more
-            if(strstr(to_parse[a], ".text") == NULL && strstr(to_parse[a], ".data") == NULL ){
-                printf("%s\n", to_parse[a]);
-            }
-
-        //     char** parsedBySpace = (char**)malloc(num_lines * sizeof(char*));
-
-        //     if(strstr(to_parse[a], " ") == NULL){
-        //         parsedBySpace = split_by_space(to_parse[a]); 
-        //     }
-        //     else{
-        //         continue;
-        //     }
-
-        //     if(a != 0){
-        //         i++;
-        //     }
-
-        //     instructions[i] = (Inst*)malloc(sizeof(Inst));
-
-        //     // label
-        //     if (strchr(parsedBySpace[0], ':') != NULL) {
-        //         int len_str = strlen(parsedBySpace[0]);
-        //         (parsedBySpace[0])[len_str - 1] = '\0';
-        //         instructions[i]->label = strdup(parsedBySpace[0]);
-
-        //         instructions[i]->mnemonic = strdup(parsedBySpace[1]);
-        //     }
-        //     else {
-        //         instructions[i]->label = "0";
-
-        //     // mnemonic
-        //         if (strchr(parsedBySpace[0], '.') != NULL) {
-        //             instructions[i]->mnemonic = "0";
-        //         }
-        //         else
-        //             instructions[i]->mnemonic = strdup(parsedBySpace[0]);
-        //     }
-
-        //     // type
-        //     if ((strcmp(instructions[i]->mnemonic, "add") == 0) || (strcmp(instructions[i]->mnemonic, "sub") == 0) ||
-        //         (strcmp(instructions[i]->mnemonic, "and") == 0) || (strcmp(instructions[i]->mnemonic, "or") == 0) ||
-        //         (strcmp(instructions[i]->mnemonic, "slt") == 0) || (strcmp(instructions[i]->mnemonic, "move") == 0)) {
-        //         instructions[i]->type = "R";
-        //     }
-        //     else if ((strcmp(instructions[i]->mnemonic, "addi") == 0) || (strcmp(instructions[i]->mnemonic, "addiu") == 0)) {
-        //         instructions[i]->type = "I";
-        //     }
-        //     else if ((strcmp(instructions[i]->mnemonic, "beq") == 0) || (strcmp(instructions[i]->mnemonic, "bne") == 0)) {
-        //         instructions[i]->type = "branch";
-        //     }
-        //     else if ((strcmp(instructions[i]->mnemonic, "lw") == 0) || (strcmp(instructions[i]->mnemonic, "sw") == 0)) {
-        //         instructions[i]->type = "transfer";
-        //     }
-        //     else if (strcmp(instructions[i]->mnemonic, "jr") == 0) {
-        //         instructions[i]->type = "jr";
-        //     }
-        //     else if ((strcmp(instructions[i]->mnemonic, "j") == 0) || (strcmp(instructions[i]->mnemonic, "jal") == 0)) {
-        //         instructions[i]->type = "J";
-        //     }
-        //     else {
-        //         instructions[i]->type = "0";
-        //     }
-
-        //     for (int k = 0; k < 1; k++) {
-        //         if(parsedBySpace[k] != NULL){
-        //             free(parsedBySpace[k]);
-        //         }
-        //     }
-        //     free(parsedBySpace);
+        
+        if(strstr(to_parse[0], ".data") != NULL){
+            is_data_seg = 1;
+            continue;
         }
-        i++;
+        
+        if(!is_data_seg){
+            for(int a = 0; a <= len_pseudo; a++){
+                //to_parse[a] has the line to parse
+                //there will be problems with num_lines because input number of lines is not the same as
+                //new number of lines with parsed macros since itll be much more
+                // if(strstr(to_parse[a], ".text") == NULL){
+                //     printf("%s\n", to_parse[a]);
+                // }
+
+                
+
+            //     char** parsedBySpace = (char**)malloc(num_lines * sizeof(char*));
+
+            //     if(strstr(to_parse[a], " ") == NULL){
+            //         parsedBySpace = split(to_parse[a]); 
+            //     }
+            //     else{
+            //         continue;
+            //     }
+
+            //     if(a != 0){
+            //         i++;
+            //     }
+
+                // instructions[i] = (Inst*)malloc(sizeof(Inst));
+
+            //     // label
+            //     if (strchr(parsedBySpace[0], ':') != NULL) {
+            //         int len_str = strlen(parsedBySpace[0]);
+            //         (parsedBySpace[0])[len_str - 1] = '\0';
+            //         instructions[i]->label = strdup(parsedBySpace[0]);
+
+            //         instructions[i]->mnemonic = strdup(parsedBySpace[1]);
+            //     }
+            //     else {
+            //         instructions[i]->label = "0";
+
+            //     // mnemonic
+            //         if (strchr(parsedBySpace[0], '.') != NULL) {
+            //             instructions[i]->mnemonic = "0";
+            //         }
+            //         else
+            //             instructions[i]->mnemonic = strdup(parsedBySpace[0]);
+            //     }
+
+            //     // type
+            //     if ((strcmp(instructions[i]->mnemonic, "add") == 0) || (strcmp(instructions[i]->mnemonic, "sub") == 0) ||
+            //         (strcmp(instructions[i]->mnemonic, "and") == 0) || (strcmp(instructions[i]->mnemonic, "or") == 0) ||
+            //         (strcmp(instructions[i]->mnemonic, "slt") == 0) || (strcmp(instructions[i]->mnemonic, "move") == 0)) {
+            //         instructions[i]->type = "R";
+            //     }
+            //     else if ((strcmp(instructions[i]->mnemonic, "addi") == 0) || (strcmp(instructions[i]->mnemonic, "addiu") == 0)) {
+            //         instructions[i]->type = "I";
+            //     }
+            //     else if ((strcmp(instructions[i]->mnemonic, "beq") == 0) || (strcmp(instructions[i]->mnemonic, "bne") == 0)) {
+            //         instructions[i]->type = "branch";
+            //     }
+            //     else if ((strcmp(instructions[i]->mnemonic, "lw") == 0) || (strcmp(instructions[i]->mnemonic, "sw") == 0)) {
+            //         instructions[i]->type = "transfer";
+            //     }
+            //     else if (strcmp(instructions[i]->mnemonic, "jr") == 0) {
+            //         instructions[i]->type = "jr";
+            //     }
+            //     else if ((strcmp(instructions[i]->mnemonic, "j") == 0) || (strcmp(instructions[i]->mnemonic, "jal") == 0)) {
+            //         instructions[i]->type = "J";
+            //     }
+            //     else {
+            //         instructions[i]->type = "0";
+            //     }
+
+            //     for (int k = 0; k < 1; k++) {
+            //         if(parsedBySpace[k] != NULL){
+            //             free(parsedBySpace[k]);
+            //         }
+            //     }
+            //     free(parsedBySpace);
+            }
+            
+            i++;
+        }
+        else{
+            parse_data(to_parse[0], num_data_line);
+            num_data_line++;
+        }
     }
 
+    for(int i = 0; i < 5; i++){
+        printf("%s ", data_array[i][0]);
+        printf("%s\n", data_array[i][1]);
+    }
+
+    free(to_parse);
+    free(macros_pseudo);
     fclose(file);
 }
 
@@ -310,12 +371,12 @@ void symbol_table(int num_lines, Inst** instructions) {
     FILE* symboltable = fopen("symboltable.txt", "w");
     ftruncate(fileno(symboltable), 0);
 
-    char temp_str[10];
+    char *temp_str = (char*)malloc(8 * sizeof(char*));
     int temp = 0;
 
     for (int i=0; i<num_lines; i++) {
         temp = (i+1)*4 + 4194304 - 8;
-        sprintf(temp_str, "%X\n", temp);
+        snprintf(temp_str, sizeof(temp_str), "%X\n", temp);
         instructions[i]->address = temp_str;
         
         if (strcmp(instructions[i]->label, "0") != 0) {
@@ -340,6 +401,7 @@ int main(int argc, char* argv[]) {
     instructions = calloc(MAX_ARR_SIZE, MAX_LINE_LENGTH);
     
     parse_input_file("mips.txt", instructions);
+    
     // symbol_table(num_lines, instructions);
 
     // printf("LABEL\tTYPE\tMNEMONIC ADDRESS\n");
