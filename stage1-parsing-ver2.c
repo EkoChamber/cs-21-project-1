@@ -256,71 +256,71 @@ void parse_input_file(const char* filename, Inst** instructions) {
             }
             final_total_lines++;
 
-            char** parsedBySpace = (char**)malloc(num_lines * sizeof(char*));
+        //     char** parsedBySpace = (char**)malloc(num_lines * sizeof(char*));
 
-            if(strstr(to_parse[a], " ") == NULL){
-                parsedBySpace = split_by_space(to_parse[a]); 
-            }
-            else{
-                continue;
-            }
+        //     if(strstr(to_parse[a], " ") == NULL){
+        //         parsedBySpace = split_by_space(to_parse[a]); 
+        //     }
+        //     else{
+        //         continue;
+        //     }
 
-            if(a != 0){
-                i++;
-            }
+        //     if(a != 0){
+        //         i++;
+        //     }
 
-            instructions[i] = (Inst*)malloc(sizeof(Inst));
+        //     instructions[i] = (Inst*)malloc(sizeof(Inst));
 
-            // label
-            if (strchr(parsedBySpace[0], ':') != NULL) {
-                int len_str = strlen(parsedBySpace[0]);
-                (parsedBySpace[0])[len_str - 1] = '\0';
-                instructions[i]->label = strdup(parsedBySpace[0]);
+        //     // label
+        //     if (strchr(parsedBySpace[0], ':') != NULL) {
+        //         int len_str = strlen(parsedBySpace[0]);
+        //         (parsedBySpace[0])[len_str - 1] = '\0';
+        //         instructions[i]->label = strdup(parsedBySpace[0]);
 
-                instructions[i]->mnemonic = strdup(parsedBySpace[1]);
-            }
-            else {
-                instructions[i]->label = "0";
+        //         instructions[i]->mnemonic = strdup(parsedBySpace[1]);
+        //     }
+        //     else {
+        //         instructions[i]->label = "0";
 
-            // mnemonic
-                if (strchr(parsedBySpace[0], '.') != NULL) {
-                    instructions[i]->mnemonic = "0";
-                }
-                else
-                    instructions[i]->mnemonic = strdup(parsedBySpace[0]);
-            }
+        //     // mnemonic
+        //         if (strchr(parsedBySpace[0], '.') != NULL) {
+        //             instructions[i]->mnemonic = "0";
+        //         }
+        //         else
+        //             instructions[i]->mnemonic = strdup(parsedBySpace[0]);
+        //     }
 
-            // type
-            if ((strcmp(instructions[i]->mnemonic, "add") == 0) || (strcmp(instructions[i]->mnemonic, "sub") == 0) ||
-                (strcmp(instructions[i]->mnemonic, "and") == 0) || (strcmp(instructions[i]->mnemonic, "or") == 0) ||
-                (strcmp(instructions[i]->mnemonic, "slt") == 0) || (strcmp(instructions[i]->mnemonic, "move") == 0)) {
-                instructions[i]->type = "R";
-            }
-            else if ((strcmp(instructions[i]->mnemonic, "addi") == 0) || (strcmp(instructions[i]->mnemonic, "addiu") == 0)) {
-                instructions[i]->type = "I";
-            }
-            else if ((strcmp(instructions[i]->mnemonic, "beq") == 0) || (strcmp(instructions[i]->mnemonic, "bne") == 0)) {
-                instructions[i]->type = "branch";
-            }
-            else if ((strcmp(instructions[i]->mnemonic, "lw") == 0) || (strcmp(instructions[i]->mnemonic, "sw") == 0)) {
-                instructions[i]->type = "transfer";
-            }
-            else if (strcmp(instructions[i]->mnemonic, "jr") == 0) {
-                instructions[i]->type = "jr";
-            }
-            else if ((strcmp(instructions[i]->mnemonic, "j") == 0) || (strcmp(instructions[i]->mnemonic, "jal") == 0)) {
-                instructions[i]->type = "J";
-            }
-            else {
-                instructions[i]->type = "0";
-            }
+        //     // type
+        //     if ((strcmp(instructions[i]->mnemonic, "add") == 0) || (strcmp(instructions[i]->mnemonic, "sub") == 0) ||
+        //         (strcmp(instructions[i]->mnemonic, "and") == 0) || (strcmp(instructions[i]->mnemonic, "or") == 0) ||
+        //         (strcmp(instructions[i]->mnemonic, "slt") == 0) || (strcmp(instructions[i]->mnemonic, "move") == 0)) {
+        //         instructions[i]->type = "R";
+        //     }
+        //     else if ((strcmp(instructions[i]->mnemonic, "addi") == 0) || (strcmp(instructions[i]->mnemonic, "addiu") == 0)) {
+        //         instructions[i]->type = "I";
+        //     }
+        //     else if ((strcmp(instructions[i]->mnemonic, "beq") == 0) || (strcmp(instructions[i]->mnemonic, "bne") == 0)) {
+        //         instructions[i]->type = "branch";
+        //     }
+        //     else if ((strcmp(instructions[i]->mnemonic, "lw") == 0) || (strcmp(instructions[i]->mnemonic, "sw") == 0)) {
+        //         instructions[i]->type = "transfer";
+        //     }
+        //     else if (strcmp(instructions[i]->mnemonic, "jr") == 0) {
+        //         instructions[i]->type = "jr";
+        //     }
+        //     else if ((strcmp(instructions[i]->mnemonic, "j") == 0) || (strcmp(instructions[i]->mnemonic, "jal") == 0)) {
+        //         instructions[i]->type = "J";
+        //     }
+        //     else {
+        //         instructions[i]->type = "0";
+        //     }
 
-            for (int k = 0; k < 1; k++) {
-                if(parsedBySpace[k] != NULL){
-                    free(parsedBySpace[k]);
-                }
-            }
-            free(parsedBySpace);
+        //     for (int k = 0; k < 1; k++) {
+        //         if(parsedBySpace[k] != NULL){
+        //             free(parsedBySpace[k]);
+        //         }
+        //     }
+        //     free(parsedBySpace);
         }
         i++;
     }
@@ -362,10 +362,10 @@ int main(int argc, char* argv[]) {
     parse_input_file("mips.txt", instructions);
     // symbol_table(num_lines, instructions);
 
-    printf("LABEL\tTYPE\tMNEMONIC ADDRESS\n");
-    for (int i=0; i<3; i++) {
-        printf("%s\t%s\t%s\n", instructions[i]->label, instructions[i]->type, instructions[i]->mnemonic);
-    }
+    // printf("LABEL\tTYPE\tMNEMONIC ADDRESS\n");
+    // for (int i=0; i<3; i++) {
+    //     printf("%s\t%s\t%s\n", instructions[i]->label, instructions[i]->type, instructions[i]->mnemonic);
+    // }
 
     free(instructions);
     return 0;
