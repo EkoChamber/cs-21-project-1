@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h> 
+#include <fcntl.h>   
 
 #define MAX_LINE_LENGTH 256
 #define MAX_ARR_SIZE 100
@@ -8,6 +10,8 @@
 char** split_by_space(char*);
 char** split_by_comma(char*);
 int final_total_lines = 0;
+
+char* concat_str(const char* str1, const char* str2);
 
 typedef struct instruction_line Inst;
 struct instruction_line {
@@ -18,20 +22,20 @@ struct instruction_line {
     char** operands;
 };
 
-char** split_by_parentheses(char* line) {
-    char** splitString = (char**)malloc(5 * sizeof(char*));
-    char* token = strtok(line, "(");
 
-    int i = 0;
-    while (token != NULL && i < 5) {
-        splitString[i] = strdup(token);
+char* concat_str(const char* str1, const char* str2) {
+    size_t len1 = strlen(str1);
+    size_t len2 = strlen(str2);
+    char *result = (char*)malloc(len1 + len2 + 1);  // Allocate memory for the concatenated string
 
-        token = strtok(NULL, "(");
-        i++;
+    if (result) {
+        strcpy(result, str1);   // Copy the first string
+        strcat(result, str2);   // Concatenate the second string
     }
-    // splitString[i] = NULL; // NULL terminate the array
-    return splitString;
+
+    return result;  // Return the concatenated string
 }
+
 
 char** split_by_space(char* line) {
     char** splitString = (char**)malloc(5 * sizeof(char*));
@@ -48,37 +52,6 @@ char** split_by_space(char* line) {
     return splitString;
 }
 
-char** split_by_comma(char* line) {
-    char** splitString = (char**)malloc(3 * sizeof(char*));
-    char* token = strtok(line, ",");
-    
-    int i = 0;
-    while (token != NULL && i < 3) {
-        splitString[i] = strdup(token);
-
-        token = strtok(NULL, ",");
-        i++;
-    }
-    splitString[i] = NULL; // NULL terminate the array
-    return splitString;
-}
-
-char* concat_str(char* a, char* b){
-    int totalLength = strlen(a) + strlen(b) + 1; 
-    
-    char *result = malloc(totalLength);
-    
-    if (result == NULL) {
-        printf("Memory allocation failed.\n");
-        return 1;
-    }
-    
-    strcpy(result, a);
-    
-    strcat(result, b);
-
-    return result;
-}
 
 
 char** check_macro_pseudo(char* input_str){
@@ -94,93 +67,94 @@ char** check_macro_pseudo(char* input_str){
 
     if(strstr(str[0], ":") != NULL){
         label = str[0];
+        label = concat_str(label, " ");
         temp++;
     }
     else{
-        label = "fart";
+        label = "";
         temp = 0;
     }
 
     if(!strcmp(str[temp], "move")){
         return_str = (char**)malloc(2 * sizeof(char*));
         return_str[0] = label;
-        return_str[0] = concat_str(return_str[0], " addu ");
+        return_str[0] = concat_str(return_str[0], "addu ");
         return_str[0] = concat_str(return_str[0], str[temp+1]);
         return_str[0] = concat_str(return_str[0], ",$zero,");
         return_str[0] = concat_str(return_str[0], str[temp+2]);
-        return_str[1] = '\0';
+        return_str[1] = "end str";
         return return_str;
     }
     else if(!strcmp(str[temp], "li")){
         return_str = (char**)malloc(2 * sizeof(char*));
         return_str[0] = label;
-        return_str[0] = concat_str(return_str[0], " ori ");
+        return_str[0] = concat_str(return_str[0], "ori ");
         return_str[0] = concat_str(return_str[0], str[temp+1]);
         return_str[0] = concat_str(return_str[0], ",$zero,");
         return_str[0] = concat_str(return_str[0], str[temp+2]);
-        return_str[1] = '\0';
+        return_str[1] = "end str";
         return return_str;
     }
     else if(!strcmp(str[temp], "lw")){
         return_str = (char**)malloc(3 * sizeof(char*));
         return_str[0] = label;
-        return_str[0] = concat_str(return_str[0], " lui ");
+        return_str[0] = concat_str(return_str[0], "lui ");
         return_str[0] = concat_str(return_str[0], str[temp+2]);
         return_str[0] = concat_str(return_str[0], ",0x1001");
         return_str[1] = "lw ";
         return_str[0] = concat_str(return_str[1], str[temp+1]);
         return_str[0] = concat_str(return_str[0], ",12($at)");
-        return_str[2] = '\0';
+        return_str[2] = "end str";
         return return_str;
     }
     else if(!strcmp(str[temp], "print_str")){
         return_str = (char**)malloc(4 * sizeof(char*));
         return_str[0] = label;
-        return_str[0] = concat_str(return_str[0], " li $v0,4");
+        return_str[0] = concat_str(return_str[0], "li $v0,4");
         return_str[1] = "li $a0,";
         return_str[1] = concat_str(return_str[1], str[temp+1]);
         return_str[2] = "syscall";
-        return_str[3] = '\0';
+        return_str[3] = "end str";
         return return_str;
     }
     else if(!strcmp(str[temp], "read_str")){
         return_str = (char**)malloc(3 * sizeof(char*));
         return_str[0] = label;
-        return_str[0] = concat_str(return_str[0], " li $v0,8");
+        return_str[0] = concat_str(return_str[0], "li $v0,8");
         return_str[1] = "syscall";
-        return_str[2] = '\0';
+        return_str[2] = "end str";
         return return_str;
     }
     else if(!strcmp(str[temp], "print_integer")){
         return_str = (char**)malloc(4 * sizeof(char*));
         return_str[0] = label;
-        return_str[0] = concat_str(return_str[0], " li $v0,1");
+        return_str[0] = concat_str(return_str[0], "li $v0,1");
         return_str[1] = "li $a0,<parameter>";
         return_str[1] = concat_str(return_str[1], str[temp+1]);
         return_str[2] = "syscall";
-        return_str[3] = '\0';
+        return_str[3] = "end str";
         return return_str;
     }
     else if(!strcmp(str[temp], "read_integer")){
         return_str = (char**)malloc(3 * sizeof(char*));
         return_str[0] = label;
-        return_str[0] = concat_str(return_str[0], " li $v0,8");
+        return_str[0] = concat_str(return_str[0], "li $v0,8");
         return_str[1] = "syscall";
-        return_str[2] = '\0';
+        return_str[2] = "end str";
         return return_str;
     }
     else if(!strcmp(str[temp], "exit")){
         return_str = (char**)malloc(3 * sizeof(char*));
         return_str[0] = label;
-        return_str[0] = concat_str(return_str[0], " li $v0,10");
+        return_str[0] = concat_str(return_str[0], "li $v0,10");
         return_str[1] = "syscall";
-        return_str[2] = '\0';
+        return_str[2] = "end str";
         return return_str;
     }
     else if(!strcmp(str[temp], "GCD")){
         return_str = (char**)malloc(19 * sizeof(char*));
         return_str[0] = label;
-        return_str[0] = concat_str(return_str[0], " subu $sp,$sp,32");
+        return_str[0] = concat_str(return_str[0], "subu $sp,$sp,32");
         return_str[1] = "sw $ra, 28($sp)";
         return_str[2] = "sw $s0, 24($sp)";
         return_str[3] = "sw $s1, 20($sp)";
@@ -190,21 +164,21 @@ char** check_macro_pseudo(char* input_str){
         return_str[7] = "add $a0, $0, $s1	";
         return_str[8] = "div $s0, $s1";
         return_str[9] = "mfhi $a1";
-        return_str[10] = "recurse:jal GCD";
-        return_str[11] = "bc:lw $ra, 28 ($sp)";
+        return_str[10] = "recurse: jal GCD";
+        return_str[11] = "bc: lw $ra, 28 ($sp)";
         return_str[12] = "lw $s0, 24 ($sp)";
         return_str[13] = "lw $s1, 20 ($sp)";
         return_str[14] = "addu $sp, $sp, 32";
         return_str[15] = "jr $ra";
-        return_str[16] = "return_a:add $v0, $0, $s0";
+        return_str[16] = "return_a: add $v0, $0, $s0";
         return_str[17] = "j bc";
-        return_str[18] = '\0';
+        return_str[18] = "end str";
         return return_str;
     }
     else{
         return_str = (char**)malloc(2 * sizeof(char*));
         return_str[0] = "not macro";
-        return_str[1] = '\0';
+        return_str[1] = "end str";
         return return_str;
     }
 
@@ -220,6 +194,7 @@ void parse_input_file(const char* filename, Inst** instructions) {
     char **lines = (char**)malloc(num_lines * sizeof(char*));
     char **macros_pseudo = (char**)malloc(MAX_ARR_SIZE * sizeof(char*));
     char **to_parse = (char**)malloc(MAX_ARR_SIZE * sizeof(char*));
+    char *compare_str;
 
     int i=-1;
     while (fgets(line, sizeof(line), file)) {
@@ -236,11 +211,13 @@ void parse_input_file(const char* filename, Inst** instructions) {
 
         lines[i] = strdup(line);
 
-
+        len_pseudo = 0;
         macros_pseudo = check_macro_pseudo(lines[i]);
-        while(macros_pseudo[len_pseudo] != '\0'){
+        compare_str = macros_pseudo[len_pseudo];
+        while(strstr(compare_str, "end str") == NULL){
             to_parse[len_pseudo] = macros_pseudo[len_pseudo];
             len_pseudo++;
+            compare_str = macros_pseudo[len_pseudo];
         }
         len_pseudo--;
 
@@ -250,11 +227,12 @@ void parse_input_file(const char* filename, Inst** instructions) {
 
 
         for(int a = 0; a <= len_pseudo; a++){
-
+            //to_parse[a] has the line to parse
+            //there will be problems with num_lines because input number of lines is not the same as
+            //new number of lines with parsed macros since itll be much more
             if(strstr(to_parse[a], ".text") == NULL && strstr(to_parse[a], ".data") == NULL ){
                 printf("%s\n", to_parse[a]);
             }
-            final_total_lines++;
 
         //     char** parsedBySpace = (char**)malloc(num_lines * sizeof(char*));
 
@@ -332,17 +310,19 @@ void symbol_table(int num_lines, Inst** instructions) {
     FILE* symboltable = fopen("symboltable.txt", "w");
     ftruncate(fileno(symboltable), 0);
 
-    char* output[10];
+    char temp_str[10];
+    int temp = 0;
 
     for (int i=0; i<num_lines; i++) {
-        instructions[i]->address = (i+1)*4 + 4194304 - 8;
+        temp = (i+1)*4 + 4194304 - 8;
+        sprintf(temp_str, "%X\n", temp);
+        instructions[i]->address = temp_str;
         
         if (strcmp(instructions[i]->label, "0") != 0) {
             fprintf(symboltable, instructions[i]->label);
             fprintf(symboltable, "\t");
-            sprintf(output, "%X\n", instructions[i]->address);
             fprintf(symboltable, "0x");
-            fprintf(symboltable, output);
+            fprintf(symboltable, instructions[i]->address);
         }
     }
 }
