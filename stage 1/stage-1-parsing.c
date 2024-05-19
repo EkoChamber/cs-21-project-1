@@ -286,6 +286,7 @@ int parse_input_file(const char* filename) {
     } */
     free(to_parse);
     free(macros_pseudo);
+    fclose(temp);
     fclose(file);
     return lines_counter;
 }
@@ -296,6 +297,8 @@ void parse_instructions(const char* filename, Inst** instructions, int num_lines
     char line[MAX_LINE_LENGTH];
     char **lines = (char**)malloc(num_lines * sizeof(char*));
     char **to_parse = (char**)malloc(MAX_ARR_SIZE * sizeof(char*));
+
+    
 
     int i=-1;
     while (fgets(line, sizeof(line), file)) {
@@ -311,7 +314,7 @@ void parse_instructions(const char* filename, Inst** instructions, int num_lines
 
         lines[i] = strdup(line);
 
-            to_parse[0] = lines[i];
+        to_parse[0] = lines[i];
 
         for (int a = 0; a <= len_pseudo; a++) {
             char** parsedInst = (char**)malloc(num_lines * sizeof(char*));
@@ -331,11 +334,11 @@ void parse_instructions(const char* filename, Inst** instructions, int num_lines
                 instructions[i]->label = "0";
 
             // mnemonic
-                if (strchr(parsedInst[0], '.') != NULL) {
-                    instructions[i]->mnemonic = "0";
-                }
-                else
-                    instructions[i]->mnemonic = strdup(parsedInst[0]);
+            if (strchr(parsedInst[0], '.') != NULL) {
+                instructions[i]->mnemonic = "0";
+            }
+            else
+                instructions[i]->mnemonic = strdup(parsedInst[0]);
             }
 
             // type
@@ -378,8 +381,9 @@ void parse_instructions(const char* filename, Inst** instructions, int num_lines
                     instructions[i]->operands[j] = "NULL";
             }
 
-            for (int j=0; j<1; j++)
+            for (int j=0; j<1; j++){
                 free(parsedInst[j]);
+            }
         }
         i++;
     }
@@ -393,10 +397,10 @@ void symbol_table(int num_lines, Inst** instructions) {
     char *temp_str = (char*)malloc(8 * sizeof(char*));
     int temp = 0;
 
-    for (int i=0; i<num_lines; i++) {
-        temp = (i+1)*4 + 4194304 - 8;
-        snprintf(temp_str, sizeof(temp_str), "%X\n", temp);
-        instructions[i]->address = temp_str;
+    for (int i=0; i<(num_lines-1); i++) {
+        temp = (i+1)*4 + 4194304 - 4;
+        snprintf(temp_str, sizeof(temp_str), "%X", temp);
+        instructions[i]->address = strdup(temp_str);
         
         if (strcmp(instructions[i]->label, "0") != 0) {
             fprintf(symboltable, instructions[i]->label);
@@ -414,21 +418,20 @@ int main(int argc, char* argv[]) {
     int num_lines = 0;
     fscanf(file, "%d", &num_lines);
     
-    Inst** instructions = (Inst**)malloc(num_lines * sizeof(Inst*));
     
     final_total_lines = parse_input_file("mips.txt");
-    printf("%d\n", final_total_lines);
-
+    // printf("%d\n", final_total_lines);
+    Inst** instructions = (Inst**)malloc(final_total_lines * sizeof(Inst*));
     parse_instructions("temp.txt", instructions, final_total_lines);
     
-    /*
+    
     symbol_table(final_total_lines, instructions);
 
     printf("LABEL\tTYPE\tMNEMONIC ADDRESS\n");
-    for (int i=0; i<3; i++) {
-        printf("%s\t%s\t%s\n", instructions[i]->label, instructions[i]->type, instructions[i]->mnemonic);
+    for (int i=0; i<final_total_lines-1; i++) {
+        printf("%s\t%s\t%s\t%s\n", instructions[i]->label, instructions[i]->type, instructions[i]->mnemonic, instructions[i]->address);
     }
-    */
+    
 
     free(instructions);
     return 0;
