@@ -261,11 +261,11 @@ int parse_input_file(const char* filename) {
         }
         len_pseudo--;
 
-        if (to_parse[0] == "not macro") {
+        if (!strcmp(to_parse[0], "not macro")) {
             to_parse[0] = strdup(line);
         }
         
-        if (strstr(to_parse[0], ".data") != NULL) {
+        if (!strcmp(to_parse[0], ".data")) {
             is_data_seg = 1;
             continue;
         }
@@ -406,10 +406,10 @@ void symbol_table(int num_lines, Inst** instructions) {
         instructions[i]->address = strdup(temp_str);
         
         if (strcmp(instructions[i]->label, "0") != 0) {
-            fprintf(symboltable, instructions[i]->label);
+            fprintf(symboltable, "%s", instructions[i]->label);
             fprintf(symboltable, "\t");
             fprintf(symboltable, "0x");
-            fprintf(symboltable, instructions[i]->address);
+            fprintf(symboltable, "%s", instructions[i]->address);
             fprintf(symboltable, "\n");
         }
     }
@@ -610,7 +610,7 @@ void execute(int num_lines, Inst** instructions) {
 
         char output[32];
         sprintf(output, "%s\n", instructions[i]->binary);
-        fprintf(execute, output);
+        fprintf(execute, "%s\n", output);
     }
     fclose(execute);
 }
@@ -701,6 +701,7 @@ char *imm_to_binary(const char* decimalString) {
             carry = bit / 2;
         }
     }
+    return binary;
 }
 
 char *address_to_binary(const char* decimalString) {
@@ -770,7 +771,7 @@ int main(int argc, char* argv[]) {
     
     symbol_table(final_total_lines, instructions);
     
-    // execute(final_total_lines, instructions);
+    execute(final_total_lines, instructions);
 
     printf("LABEL\tTYPE\tMNEMONIC ADDRESS\tOPERANDS\n");
     for (int i=0; i<final_total_lines-1; i++) {
