@@ -50,7 +50,7 @@ char** split(char* line) {
         token = strtok(NULL, " ,()");
         i++;
     }
-    // splitString[i] = NULL; // NULL terminate the array
+    splitString[i] = NULL; // NULL terminate the array
     return splitString;
 }
 
@@ -65,7 +65,7 @@ char** split_without_space(char* line) {
         token = strtok(NULL, ",()");
         i++;
     }
-    // splitString[i] = NULL; // NULL terminate the array
+    splitString[i] = NULL; // NULL terminate the array
     return splitString;
 }
 
@@ -665,7 +665,7 @@ char *convert_register(const char* regName) {
 }
 
 char *imm_to_binary(const char* decimalString) {
-    char *binary = (char *)malloc(16 * sizeof(char));
+    char *binary = (char *)malloc(17 * sizeof(char));
     int decimal = atoi(decimalString);
     int numBits = sizeof(int) * 4;
     int i = 0;
