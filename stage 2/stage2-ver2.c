@@ -23,6 +23,7 @@ struct instruction_line {
     char* label;
     char* mnemonic;
     char* binary;
+    char** binaryArr;
     char** operands;
 };
 
@@ -50,7 +51,7 @@ char** split(char* line) {
         token = strtok(NULL, " ,()");
         i++;
     }
-    splitString[i] = NULL; // NULL terminate the array
+    // splitString[i] = NULL; // NULL terminate the array
     return splitString;
 }
 
@@ -65,7 +66,7 @@ char** split_without_space(char* line) {
         token = strtok(NULL, ",()");
         i++;
     }
-    splitString[i] = NULL; // NULL terminate the array
+    // splitString[i] = NULL; // NULL terminate the array
     return splitString;
 }
 
@@ -420,197 +421,206 @@ void execute(int num_lines, Inst** instructions) {
     FILE* execute = fopen("execute.txt", "w");
     ftruncate(fileno(execute), 0);
 
-    for (int i=0; i<num_lines; i++) {
+    char *temp_str = (char*)malloc(33 * sizeof(char*));
+
+    for (int i = 0; i < (num_lines-1); i++) {
         printf("%d: %s\n", i, instructions[i]->mnemonic);
         fflush(stdout);
 
+        instructions[i]->binary = (char*)malloc(33 * sizeof(char));
+        // instructions[i]->binary = strdup(temp_str);
+
         if (strcmp(instructions[i]->mnemonic, "syscall") == 0) {
-            instructions[i]->binary = "00000000000000000000000000000000";
+            instructions[i]->binaryArr = (char**)malloc(2 * sizeof(char*));
+            instructions[i]->binaryArr[0] = strdup("0000000000000000");
+            instructions[i]->binaryArr[1] = strdup("0000000000000000");
+
+            for (int j=0; j<2; j++) {
+                fprintf(execute, "%s", instructions[i]->binaryArr[j]);
+            }
+            fprintf(execute, "\n");
         }
 
         // R type
         else if ((strcmp(instructions[i]->type, "R") == 0) || (strcmp(instructions[i]->mnemonic, "move") == 0)) {
-            char* binaryArr[6];
-            char temp[33];
-
-            // opcode and shamt
-            binaryArr[0] = "000000";
-            binaryArr[4] = "00000";
+            instructions[i]->binaryArr = (char**)malloc(6 * sizeof(char*));
+            
+            // opcode and shamrt
+            instructions[i]->binaryArr[0] = strdup("000000");
+            instructions[i]->binaryArr[4] = strdup("00000");
 
             // funct
             if ((strcmp(instructions[i]->mnemonic, "add") == 0) || strcmp(instructions[i]->mnemonic, "move") == 0)          // 20
-                binaryArr[5] = "100000";
+                instructions[i]->binaryArr[5] = "100000";
+            else if (strcmp(instructions[i]->mnemonic, "addu") == 0)     // 21
+                instructions[i]->binaryArr[5] = "100001";
             else if (strcmp(instructions[i]->mnemonic, "sub") == 0)     // 22
-                binaryArr[5] = "100010";
+                instructions[i]->binaryArr[5] = "100010";
+            else if (strcmp(instructions[i]->mnemonic, "subu") == 0)     // 23
+                instructions[i]->binaryArr[5] = "100011";
             else if (strcmp(instructions[i]->mnemonic, "and") == 0)     // 24
-                binaryArr[5] = "100100";
+                instructions[i]->binaryArr[5] = "100100";
             else if (strcmp(instructions[i]->mnemonic, "or") == 0)      // 25   
-                binaryArr[5] = "100101";
+                instructions[i]->binaryArr[5] = "100101";
             else if (strcmp(instructions[i]->mnemonic, "slt") == 0)     // 2a
-                binaryArr[5] = "101010";
+                instructions[i]->binaryArr[5] = "101010";
 
             // registers
-            binaryArr[1] = convert_register(instructions[i]->operands[1]);   // rs
+            instructions[i]->binaryArr[1] = convert_register(instructions[i]->operands[1]);   // rs
 
             if (strcmp(instructions[i]->mnemonic, "move") == 0)
-                binaryArr[2] = "00000";   // rt
+                instructions[i]->binaryArr[2] = "00000";   // rt
             else
-                binaryArr[2] = convert_register(instructions[i]->operands[2]);   // rt
+                instructions[i]->binaryArr[2] = convert_register(instructions[i]->operands[2]);   // rt
 
-            binaryArr[3] = convert_register(instructions[i]->operands[0]);   // rd
-
-            strcpy(temp, "");
+            instructions[i]->binaryArr[3] = convert_register(instructions[i]->operands[0]);   // rd
 
             for (int j=0; j<6; j++) {
-                strcat(temp, binaryArr[j]);
+                fprintf(execute, "%s", instructions[i]->binaryArr[j]);
             }
-
-            instructions[i]->binary = strdup(temp);
+            fprintf(execute, "\n");
         }
 
         // I type
         else if (strcmp(instructions[i]->type, "I") == 0) {
-            char* binaryArr[4];
-            char temp[33];
+            instructions[i]->binaryArr = (char**)malloc(4 * sizeof(char*));
 
             // opcode
             if (strcmp(instructions[i]->mnemonic, "addi") == 0) {           // 8
-                binaryArr[0] = "001000";
+                instructions[i]->binaryArr[0] = "001000";
             }
             else if (strcmp(instructions[i]->mnemonic, "addiu") == 0) {     // 9
-                binaryArr[0] = "001001";
+                instructions[i]->binaryArr[0] = "001001";
             }
             else if (strcmp(instructions[i]->mnemonic, "li") == 0) {     // 9
-                binaryArr[0] = "001101";
+                instructions[i]->binaryArr[0] = "001101";
             }
 
             // operands 
             if (strcmp(instructions[i]->mnemonic, "li") == 0) {
-                binaryArr[2] = convert_register(instructions[i]->operands[0]);
-                binaryArr[1] = "00000";
-                binaryArr[3] = imm_to_binary(instructions[i]->operands[1]);    // imm
+                instructions[i]->binaryArr[2] = convert_register(instructions[i]->operands[0]);
+                instructions[i]->binaryArr[1] = "00000";
+                instructions[i]->binaryArr[3] = imm_to_binary(instructions[i]->operands[1]);    // imm
             }
             else {
-                binaryArr[1] = convert_register(instructions[i]->operands[1]);     // rs
-                binaryArr[2] = convert_register(instructions[i]->operands[0]);     // rt
-                binaryArr[3] = imm_to_binary(instructions[i]->operands[2]);    // imm
+                instructions[i]->binaryArr[1] = convert_register(instructions[i]->operands[1]);     // rs
+                instructions[i]->binaryArr[2] = convert_register(instructions[i]->operands[0]);     // rt
+                instructions[i]->binaryArr[3] = imm_to_binary(instructions[i]->operands[2]);    // imm
             }
-
-            strcpy(temp, "");
 
             for (int j=0; j<4; j++) {
-                strcat(temp, binaryArr[j]);
+                fprintf(execute, "%s", instructions[i]->binaryArr[j]);
             }
-
-            instructions[i]->binary = strdup(temp);
+            fprintf(execute, "\n");
         }
 
         // branch
         else if (strcmp(instructions[i]->type, "branch") == 0) {
-            char* binaryArr[4];
-            char temp[33];
-
+            instructions[i]->binaryArr = (char**)malloc(4 * sizeof(char*));
+        
             // opcode
             if (strcmp(instructions[i]->mnemonic, "beq") == 0) {            // 4
-                binaryArr[0] = "000100";
+                instructions[i]->binaryArr[0] = "000100";
             }
             else if (strcmp(instructions[i]->mnemonic, "bne") == 0) {       // 5
-                binaryArr[0] = "000101";
+                instructions[i]->binaryArr[0] = "000101";
             }
 
             // operands
-            binaryArr[1] = convert_register(instructions[i]->operands[0]);
-            binaryArr[2] = convert_register(instructions[i]->operands[1]);
+            instructions[i]->binaryArr[1] = convert_register(instructions[i]->operands[0]);
+            instructions[i]->binaryArr[2] = convert_register(instructions[i]->operands[1]);
 
-            for (int j=0; j<num_lines; j++) {
-                if (strcmp(instructions[j]->label, instructions[i]->operands[2]) == 0) {
-                    int BTA = instructions[i]->address - instructions[j]->address;
-                    char BTA_string[16];
-                    sprintf(BTA_string, "%d", BTA);
-                    binaryArr[3] = imm_to_binary(BTA_string);
+            /*for (int j=0; j<num_lines; j++) {
+                // if (instructions[j] != NULL && instructions[j]->label != NULL && instructions[i]->operands[2] != NULL) {
+                    if (strcmp(instructions[j]->label, instructions[i]->operands[2]) == 0) {
+                        int BTA = atoi(instructions[i]->address) - atoi(instructions[j]->address);
+                        char BTA_string[16];
+                        sprintf(BTA_string, "%d", BTA);
+                        instructions[i]->binaryArr[3] = imm_to_binary(BTA_string);
 
-                    continue;
-                }
+                        continue;
+                    }
+                // }
                 continue;
-            }
+            }*/
 
-            strcpy(temp, "");
+            instructions[i]->binaryArr[3] = "0000000000000000";
 
             for (int j=0; j<4; j++) {
-                strcat(temp, binaryArr[j]);
+                fprintf(execute, "%s", instructions[i]->binaryArr[j]);
             }
-
-            instructions[i]->binary = strdup(temp);
+            fprintf(execute, "\n");
         }
 
         // transfer
         else if (strcmp(instructions[i]->type, "T") == 0) { // transfer
-            char* binaryArr[4];
-            char temp[33];
-
+            instructions[i]->binaryArr = (char**)malloc(4 * sizeof(char*));
+        
             // opcode
             if (strcmp(instructions[i]->mnemonic, "lw") == 0) {             // 23
-                binaryArr[0] = "100011";
+                instructions[i]->binaryArr[0] = "100011";
             }
             else if (strcmp(instructions[i]->mnemonic, "sw") == 0) {        // 2b
-                binaryArr[0] = "101011";
+                instructions[i]->binaryArr[0] = "101011";
             }
 
             // operands
-            binaryArr[1] = convert_register(instructions[i]->operands[2]);     // rs
-            binaryArr[2] = convert_register(instructions[i]->operands[0]);     // rt
-            binaryArr[3] = imm_to_binary(instructions[i]->operands[1]);    // imm
-
-            strcpy(temp, "");
+            instructions[i]->binaryArr[1] = convert_register(instructions[i]->operands[2]);     // rs
+            instructions[i]->binaryArr[2] = convert_register(instructions[i]->operands[0]);     // rt
+            instructions[i]->binaryArr[3] = imm_to_binary(instructions[i]->operands[1]);    // imm
 
             for (int j=0; j<4; j++) {
-                strcat(temp, binaryArr[j]);
+                fprintf(execute, "%s", instructions[i]->binaryArr[j]);
             }
-
-            instructions[i]->binary = strdup(temp);
+            fprintf(execute, "\n");
         }
 
         // jump
         else if (strcmp(instructions[i]->type, "J") == 0) {
-            char* binaryArr[2];
-            char temp[33];
+            instructions[i]->binaryArr = (char**)malloc(2 * sizeof(char*));
 
             // opcode
             if (strcmp(instructions[i]->mnemonic, "j") == 0) {           // 8
-                binaryArr[0] = "000010";
+                instructions[i]->binaryArr[0] = "000010";
             }
             else if (strcmp(instructions[i]->mnemonic, "jal") == 0) {     // 9
-                binaryArr[0] = "000011";
+                instructions[i]->binaryArr[0] = "000011";
             }
 
             // operands
-            for (int j=0; j<num_lines; j++) {
+            /* for (int j=0; j<num_lines; j++) {
                 if (strcmp(instructions[j]->label, instructions[i]->operands[0]) == 0) {
                     int JTA = atoi(instructions[j]->address);
                     char JTA_string[16];
                     sprintf(JTA_string, "%d", JTA);
-                    binaryArr[1] = address_to_binary(JTA_string);
+                    instructions[i]->binaryArr[1] = address_to_binary(JTA_string);
                     break;
                 }
-            }
-
-            strcpy(temp, "");
-
+            } */
+        
             for (int j=0; j<2; j++) {
-                strcat(temp, binaryArr[j]);
+                fprintf(execute, "%s", instructions[i]->binaryArr[j]);
             }
-
-            instructions[i]->binary = strdup(temp);
+            fprintf(execute, "\n");
         }
 
         // jr
         else if (strcmp(instructions[i]->type, "jr") == 0) {
-            instructions[i]->binary = "JRJRJR";
+            /*instructions[i]->binaryArr = (char**)malloc(4 * sizeof(char*));
+        
+            for (int j=0; j<4; j++) {
+                fprintf(execute, "%s", instructions[i]->binaryArr[j]);
+            }
+            fprintf(execute, "\n");*/
+        }
+        
+        else {
+            fprintf(execute, "Instruction not supported\n");
         }
 
-        char output[32];
-        sprintf(output, "%s\n", instructions[i]->binary);
-        fprintf(execute, "%s\n", output);
+        // char output[32];
+        // sprintf(output, "%s\n", instructions[i]->binary);
+        // fprintf(execute, "%s\n", output);
     }
     fclose(execute);
 }
