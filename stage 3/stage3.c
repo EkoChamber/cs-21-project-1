@@ -349,29 +349,26 @@ void parse_instructions(const char* filename, Inst** instructions, int num_lines
             if ((strcmp(instructions[i]->mnemonic, "add") == 0) || (strcmp(instructions[i]->mnemonic, "sub") == 0) ||
                 (strcmp(instructions[i]->mnemonic, "addu") == 0) || (strcmp(instructions[i]->mnemonic, "subu") == 0) ||
                 (strcmp(instructions[i]->mnemonic, "and") == 0) || (strcmp(instructions[i]->mnemonic, "or") == 0) ||
-                (strcmp(instructions[i]->mnemonic, "slt") == 0) || (strcmp(instructions[i]->mnemonic, "move") == 0)) {
+                (strcmp(instructions[i]->mnemonic, "slt") == 0) || (strcmp(instructions[i]->mnemonic, "move") == 0))
                 instructions[i]->type = "R";
-            }
             else if ((strcmp(instructions[i]->mnemonic, "addi") == 0) || (strcmp(instructions[i]->mnemonic, "addiu") == 0)  ||
-                (strcmp(instructions[i]->mnemonic, "li") == 0) || (strcmp(instructions[i]->mnemonic, "ori") == 0)) {
+                (strcmp(instructions[i]->mnemonic, "li") == 0) || (strcmp(instructions[i]->mnemonic, "ori") == 0))
                 instructions[i]->type = "I";
-            }
             else if ((strcmp(instructions[i]->mnemonic, "beq") == 0) || (strcmp(instructions[i]->mnemonic, "bne") == 0) ||
-                    (strcmp(instructions[i]->mnemonic, "beqz") == 0)) {
+                    (strcmp(instructions[i]->mnemonic, "beqz") == 0))
                 instructions[i]->type = "branch";
-            }
-            else if ((strcmp(instructions[i]->mnemonic, "lw") == 0) || (strcmp(instructions[i]->mnemonic, "sw") == 0)) {
+            else if ((strcmp(instructions[i]->mnemonic, "lw") == 0) || (strcmp(instructions[i]->mnemonic, "sw") == 0))
                 instructions[i]->type = "T"; // transfer
-            }
-            else if (strcmp(instructions[i]->mnemonic, "jr") == 0) {
+            else if (strcmp(instructions[i]->mnemonic, "jr") == 0)
                 instructions[i]->type = "jr";
-            }
-            else if ((strcmp(instructions[i]->mnemonic, "j") == 0) || (strcmp(instructions[i]->mnemonic, "jal") == 0)) {
+            else if ((strcmp(instructions[i]->mnemonic, "j") == 0) || (strcmp(instructions[i]->mnemonic, "jal") == 0))
                 instructions[i]->type = "J";
-            }
-            else {
+            else if (strcmp(instructions[i]->mnemonic, "div") == 0)
+                instructions[i]->type = "div";
+            else if (strcmp(instructions[i]->mnemonic, "mfhi") == 0)
+                instructions[i]->type = "mfhi";
+            else
                 instructions[i]->type = "0";
-            }
 
             instructions[i]->operands = (char**)malloc(3 * sizeof(char*));
 
@@ -435,7 +432,7 @@ void execute(int num_lines, Inst** instructions) {
         // printf("%d: %s\n", i, instructions[i]->mnemonic);
         // fflush(stdout);
 
-        fprintf(execute, "%d ", i);
+        fprintf(execute, "%s ", instructions[i]->mnemonic);
 
         if (strcmp(instructions[i]->mnemonic, "syscall") == 0) {
             instructions[i]->binaryArr = (char**)malloc(2 * sizeof(char*));
@@ -452,47 +449,46 @@ void execute(int num_lines, Inst** instructions) {
         else if ((strcmp(instructions[i]->type, "R") == 0) || (strcmp(instructions[i]->mnemonic, "move") == 0)) {
             instructions[i]->binaryArr = (char**)malloc(6 * sizeof(char*));
             
-            // opcode and shamrt
+            // opcode and shamt
             instructions[i]->binaryArr[0] = strdup("000000");
             instructions[i]->binaryArr[4] = strdup("00000");
 
             // funct
             if (strcmp(instructions[i]->mnemonic, "add") == 0) {
-                instructions[i]->binaryArr[5] = "100000";
+                instructions[i]->binaryArr[5] = strdup("100000");
                 regFile[reg_to_index(instructions[i]->operands[0])] =
                     regFile[reg_to_index(instructions[i]->operands[1])] + regFile[reg_to_index(instructions[i]->operands[2])];
             }
             else if (strcmp(instructions[i]->mnemonic, "move") == 0) {         // 20
-                instructions[i]->binaryArr[5] = "100000";
+                instructions[i]->binaryArr[5] = strdup("100000");
                 regFile[reg_to_index(instructions[i]->operands[0])] =
                     regFile[reg_to_index(instructions[i]->operands[1])];
             }
             else if (strcmp(instructions[i]->mnemonic, "addu") == 0)  {    // 21
-                instructions[i]->binaryArr[5] = "100001";
+                instructions[i]->binaryArr[5] = strdup("100001");
                 // NO OPERATIONS LOGIC YET
             }
             else if (strcmp(instructions[i]->mnemonic, "sub") == 0) {     // 22
-                instructions[i]->binaryArr[5] = "100010";
+                instructions[i]->binaryArr[5] = strdup("100010");
                 regFile[reg_to_index(instructions[i]->operands[0])] =
                     regFile[reg_to_index(instructions[i]->operands[1])] - regFile[reg_to_index(instructions[i]->operands[2])];
             }
             else if (strcmp(instructions[i]->mnemonic, "subu") == 0) {    // 23
-                instructions[i]->binaryArr[5] = "100011";
+                instructions[i]->binaryArr[5] = strdup("100011");
                 // NO OPERATIONS LOGIC YET
             }
             else if (strcmp(instructions[i]->mnemonic, "and") == 0) {    // 24
-                instructions[i]->binaryArr[5] = "100100";
+                instructions[i]->binaryArr[5] = strdup("100100");
                 regFile[reg_to_index(instructions[i]->operands[0])] =
                     regFile[reg_to_index(instructions[i]->operands[1])] & regFile[reg_to_index(instructions[i]->operands[2])];
             }
             else if (strcmp(instructions[i]->mnemonic, "or") == 0) {      // 25   
-                instructions[i]->binaryArr[5] = "100101";
+                instructions[i]->binaryArr[5] = strdup("100101");
                 regFile[reg_to_index(instructions[i]->operands[0])] =
                     regFile[reg_to_index(instructions[i]->operands[1])] | regFile[reg_to_index(instructions[i]->operands[2])];
             }
             else if (strcmp(instructions[i]->mnemonic, "slt") == 0) {     // 2a
-                instructions[i]->binaryArr[5] = "101010";
-
+                instructions[i]->binaryArr[5] = strdup("101010");
                 regFile[reg_to_index(instructions[i]->operands[0])] =
                     (regFile[reg_to_index(instructions[i]->operands[1])] < regFile[reg_to_index(instructions[i]->operands[2])])
                     ? 1 : 0;
@@ -502,7 +498,7 @@ void execute(int num_lines, Inst** instructions) {
             instructions[i]->binaryArr[1] = convert_register(instructions[i]->operands[1]);   // rs
 
             if (strcmp(instructions[i]->mnemonic, "move") == 0)
-                instructions[i]->binaryArr[2] = "00000";   // rt
+                instructions[i]->binaryArr[2] = strdup("00000");   // rt
             else
                 instructions[i]->binaryArr[2] = convert_register(instructions[i]->operands[2]);   // rt
 
@@ -514,27 +510,76 @@ void execute(int num_lines, Inst** instructions) {
             fprintf(execute, "\n");
         }
 
+        // div
+        else if (strcmp(instructions[i]->type, "div") == 0) {
+            instructions[i]->binaryArr = (char**)malloc(5 * sizeof(char*));
+            
+            instructions[i]->binaryArr[0] = strdup("000000");
+            instructions[i]->binaryArr[1] = convert_register(instructions[i]->operands[0]);
+            instructions[i]->binaryArr[2] = convert_register(instructions[i]->operands[1]);
+            instructions[i]->binaryArr[3] = strdup("0000000000");
+            instructions[i]->binaryArr[4] = strdup("011010");
+
+            regFile[reg_to_index(instructions[i+1]->operands[0])] =
+                regFile[reg_to_index(instructions[i]->operands[0])] % regFile[reg_to_index(instructions[i]->operands[1])];
+
+            for (int j=0; j<5; j++) {
+                fprintf(execute, "%s", instructions[i]->binaryArr[j]);
+            }
+            fprintf(execute, "\n");
+        }
+
+        // mfhi
+        else if (strcmp(instructions[i]->type, "mfhi") == 0) {
+            instructions[i]->binaryArr = (char**)malloc(4 * sizeof(char*));
+
+            instructions[i]->binaryArr[0] = strdup("0000000000000000");
+            instructions[i]->binaryArr[1] = convert_register(instructions[i]->operands[0]);
+            instructions[i]->binaryArr[2] = strdup("00000");
+            instructions[i]->binaryArr[3] = strdup("010000");
+
+            for (int j=0; j<4; j++) {
+                fprintf(execute, "%s", instructions[i]->binaryArr[j]);
+            }
+            fprintf(execute, "\n");
+        }
+
         // I type
         else if (strcmp(instructions[i]->type, "I") == 0) {
             instructions[i]->binaryArr = (char**)malloc(4 * sizeof(char*));
 
             // opcode
             if (strcmp(instructions[i]->mnemonic, "addi") == 0) {           // 8
-                instructions[i]->binaryArr[0] = "001000";
+                instructions[i]->binaryArr[0] = strdup("001000");
                 regFile[reg_to_index(instructions[i]->operands[0])] =
                     regFile[reg_to_index(instructions[i]->operands[1])] + atoi(instructions[i]->operands[2]);
             }
             else if (strcmp(instructions[i]->mnemonic, "addiu") == 0) {     // 9
-                instructions[i]->binaryArr[0] = "001001";
+                instructions[i]->binaryArr[0] = strdup("001001");
                 // NO OPERATIONS LOGIC YET
             }
             else if (strcmp(instructions[i]->mnemonic, "li") == 0) {    // d
-                instructions[i]->binaryArr[0] = "001101";
+                instructions[i]->binaryArr[0] = strdup("001101");
                 regFile[reg_to_index(instructions[i]->operands[0])] =
                     0 | atoi(instructions[i]->operands[1]);
+
+                // WIP !!!!
+
+                // print
+                if (strcmp(instructions[i]->operands[1], "1") == 0)
+                    printf("print int\n");
+                else if (strcmp(instructions[i]->operands[1], "4") == 0)
+                    printf("print string\n");
+
+                // read
+                else if (strcmp(instructions[i]->operands[1], "5") == 0)
+                    ; // read int
+                else if (strcmp(instructions[i]->operands[1], "8") == 0)
+                    ; // read string
+
             }
             else if (strcmp(instructions[i]->mnemonic, "ori") == 0) {     // d
-                instructions[i]->binaryArr[0] = "001101";
+                instructions[i]->binaryArr[0] = strdup("001101");
                 regFile[reg_to_index(instructions[i]->operands[0])] =
                     regFile[reg_to_index(instructions[i]->operands[1])] | atoi(instructions[i]->operands[2]);
             }
@@ -542,7 +587,7 @@ void execute(int num_lines, Inst** instructions) {
             // operands 
             if (strcmp(instructions[i]->mnemonic, "li") == 0) {
                 instructions[i]->binaryArr[2] = convert_register(instructions[i]->operands[0]);
-                instructions[i]->binaryArr[1] = "00000";
+                instructions[i]->binaryArr[1] = strdup("00000");
                 instructions[i]->binaryArr[3] = imm_to_binary(instructions[i]->operands[1]);    // imm
             }
             else {
@@ -563,7 +608,7 @@ void execute(int num_lines, Inst** instructions) {
         
             // opcode
             if (strcmp(instructions[i]->mnemonic, "beq") == 0) {            // 4
-                instructions[i]->binaryArr[0] = "000100";
+                instructions[i]->binaryArr[0] = strdup("000100");
 
                 if (regFile[reg_to_index(instructions[i]->operands[0])] == regFile[reg_to_index(instructions[i]->operands[1])]) {
                     regFile[29] = 11111111;    // sp
@@ -574,7 +619,7 @@ void execute(int num_lines, Inst** instructions) {
                     ; // do nothing
             }
             else if (strcmp(instructions[i]->mnemonic, "beqz") == 0) {
-                instructions[i]->binaryArr[0] = "000100";
+                instructions[i]->binaryArr[0] = strdup("000100");
 
                 if (regFile[reg_to_index(instructions[i]->operands[0])] == 0) {
                     regFile[29] = 11111111;    // sp
@@ -585,7 +630,7 @@ void execute(int num_lines, Inst** instructions) {
                     ; // do nothing
             }
             else if (strcmp(instructions[i]->mnemonic, "bne") == 0) {       // 5
-                instructions[i]->binaryArr[0] = "000101";
+                instructions[i]->binaryArr[0] = strdup("000101");
 
                 if (regFile[reg_to_index(instructions[i]->operands[0])] != regFile[reg_to_index(instructions[i]->operands[1])]) {
                     regFile[29] = 11111111;    // sp
@@ -614,7 +659,7 @@ void execute(int num_lines, Inst** instructions) {
                 continue;
             }*/
 
-            instructions[i]->binaryArr[3] = "0000000000000000";
+            instructions[i]->binaryArr[3] = strdup("0000000000000000");
 
             for (int j=0; j<4; j++) {
                 fprintf(execute, "%s", instructions[i]->binaryArr[j]);
@@ -628,7 +673,7 @@ void execute(int num_lines, Inst** instructions) {
         
             // opcode
             if (strcmp(instructions[i]->mnemonic, "lw") == 0) {             // 23
-                instructions[i]->binaryArr[0] = "100011";
+                instructions[i]->binaryArr[0] = strdup("100011");
                 
                 int memAddress = 0;
                 memAddress = atoi(instructions[i]->operands[1]) + regFile[reg_to_index(instructions[i]->operands[2])];
@@ -637,7 +682,7 @@ void execute(int num_lines, Inst** instructions) {
                 // WIP -- need to actually access the value of the mem address first
             }
             else if (strcmp(instructions[i]->mnemonic, "sw") == 0) {        // 2b
-                instructions[i]->binaryArr[0] = "101011";
+                instructions[i]->binaryArr[0] = strdup("101011");
 
                 int memAddress = 0;
                 memAddress = atoi(instructions[i]->operands[1]) + regFile[reg_to_index(instructions[i]->operands[2])];
@@ -663,14 +708,14 @@ void execute(int num_lines, Inst** instructions) {
 
             // opcode
             if (strcmp(instructions[i]->mnemonic, "j") == 0) {           // 8
-                instructions[i]->binaryArr[0] = "000010";
+                instructions[i]->binaryArr[0] = strdup("000010");
 
                 regFile[29] = 11111111;    // sp
                 // change i
                 // WIP
             }
             else if (strcmp(instructions[i]->mnemonic, "jal") == 0) {     // 9
-                instructions[i]->binaryArr[0] = "000011";
+                instructions[i]->binaryArr[0] = strdup("000011");
 
                 regFile[29] = 11111111;    // sp
                 // change i
@@ -697,6 +742,11 @@ void execute(int num_lines, Inst** instructions) {
         // jr
         else if (strcmp(instructions[i]->type, "jr") == 0) {
             instructions[i]->binaryArr = (char**)malloc(4 * sizeof(char*));
+
+            instructions[i]->binaryArr[0] = strdup("000000");
+            instructions[i]->binaryArr[1] = convert_register(instructions[i]->operands[0]);
+            instructions[i]->binaryArr[2] = strdup("000000000000000");
+            instructions[i]->binaryArr[3] = strdup("001000");
         
             for (int j=0; j<4; j++) {
                 fprintf(execute, "%s", instructions[i]->binaryArr[j]);
@@ -714,11 +764,11 @@ void execute(int num_lines, Inst** instructions) {
     }
     fclose(execute);
 
-    for (int j = 8; j < 16; j++) {
+    /*for (int j = 8; j < 16; j++) {
         printf("%d: %d\n", j, regFile[j]);
     }
     printf("%d: %d\n", 24, regFile[24]);
-    printf("%d: %d\n", 25, regFile[25]);
+    printf("%d: %d\n", 25, regFile[25]);*/
 }
 
 char *convert_register(const char* regName) {
@@ -818,7 +868,7 @@ int reg_to_index(const char* regName) {
 }
 
 char *imm_to_binary(const char* decimalString) {
-    char *binary = (char *)malloc(17 * sizeof(char));
+    char* binary = malloc(17);
     int decimal = atoi(decimalString);
     int numBits = sizeof(int) * 4;
     int i = 0;
@@ -911,13 +961,13 @@ char *address_to_binary(const char* decimalString) {
 }
 
 int main(int argc, char* argv[]) {
-    FILE* file = fopen("mips2.txt", "r");
+    FILE* file = fopen("mips.txt", "r");
     int final_total_lines = 0;
 
     int num_lines = 0;
     fscanf(file, "%d", &num_lines);
     
-    final_total_lines = parse_input_file("mips2.txt");
+    final_total_lines = parse_input_file("mips.txt");
     // printf("%d\n", final_total_lines);
     Inst** instructions = (Inst**)malloc(final_total_lines * sizeof(Inst*));
     parse_instructions("temp.txt", instructions, final_total_lines);
