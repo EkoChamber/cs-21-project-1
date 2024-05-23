@@ -1,0 +1,7 @@
+5
+.text
+addi $t0,$t0,-2
+addi $t1,$t1,0
+May: addi $t0,$t0,1
+beq $t0,$t1,May
+addi $t5,$t5,27

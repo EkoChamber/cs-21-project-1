@@ -305,17 +305,13 @@ void parse_instructions(const char* filename, Inst** instructions, int num_lines
     char **lines = (char**)malloc(num_lines * sizeof(char*));
     char **to_parse = (char**)malloc(MAX_ARR_SIZE * sizeof(char*));
 
-    int i=-1;
+    int i = 0;
     while (fgets(line, sizeof(line), file)) {
         int len_pseudo = 0;
 
         if (line[strlen(line) - 1] == '\n')
             line[strlen(line) - 1] = '\0';
 
-        if (i == -1) {
-            i++;
-            continue;
-        }
 
         lines[i] = strdup(line);
 
@@ -415,7 +411,7 @@ void symbol_table(int num_lines, Inst** instructions) {
         i++;
     }
 
-    for (int i=0; i<(num_lines-1); i++) {
+    for (int i=0; i<(num_lines); i++) {
         temp = (i+1)*4 + 4194304 - 4;
         snprintf(temp_str, sizeof(temp_str), "%X", temp);
         instructions[i]->address = strdup(temp_str);
@@ -437,16 +433,24 @@ void execute(int num_lines, Inst** instructions) {
     ftruncate(fileno(execute), 0);
     int regFile[32];
     int temp = 0;
+    int target_i = 0;
+    int branch_taken = 0;
 
     for (int i = 0; i < 31; i++) {
         regFile[i] = 0;
     }
 
+
     char *temp_str = (char*)malloc(33 * sizeof(char*));
 
-    for (int i = 0; i < (num_lines-1); i++) {
+    for (int i = 0; i < (num_lines); i++) {
         // printf("%d: %s\n", i, instructions[i]->mnemonic);
         // fflush(stdout);
+
+        if(branch_taken == 1){
+            i = target_i;
+            branch_taken = 0;
+        }
 
         fprintf(execute, "%s ", instructions[i]->mnemonic);
 
@@ -658,33 +662,60 @@ void execute(int num_lines, Inst** instructions) {
 
                 if (regFile[reg_to_index(instructions[i]->operands[0])] == regFile[reg_to_index(instructions[i]->operands[1])]) {
                     regFile[29] = 11111111;    // sp
-                    // change i
-                    // WIP
+                    for(int j = 0; j < num_lines; j++){
+                        if(strstr(instructions[j]->label, instructions[i]->operands[2]) != NULL){
+                            target_i = j;
+                            branch_taken = 1;
+                            break;
+                        }
+                        else{
+                            branch_taken = 0;
+                        }
+                    }
                 }
-                else
-                    ; // do nothing
+                else{
+                    branch_taken = 0;
+                }
             }
             else if (strcmp(instructions[i]->mnemonic, "beqz") == 0) {
                 instructions[i]->binaryArr[0] = strdup("000100");
 
                 if (regFile[reg_to_index(instructions[i]->operands[0])] == 0) {
                     regFile[29] = 11111111;    // sp
-                    // change i
-                    // WIP
+                    for(int j = 0; j < num_lines; j++){
+                        if(strstr(instructions[j]->label, instructions[i]->operands[1]) != NULL){
+                            target_i = j;
+                            branch_taken = 1;
+                            break;
+                        }
+                        else{
+                            branch_taken = 0;
+                        }
+                    }
                 }
-                else
-                    ; // do nothing
+                else{
+                    branch_taken = 0;
+                }
             }
             else if (strcmp(instructions[i]->mnemonic, "bne") == 0) {       // 5
                 instructions[i]->binaryArr[0] = strdup("000101");
 
                 if (regFile[reg_to_index(instructions[i]->operands[0])] != regFile[reg_to_index(instructions[i]->operands[1])]) {
                     regFile[29] = 11111111;    // sp
-                    // change i
-                    // WIP
+                    for(int j = 0; j < num_lines; j++){
+                        if(strstr(instructions[j]->label, instructions[i]->operands[2]) != NULL){
+                            target_i = j;
+                            branch_taken = 1;
+                            break;
+                        }
+                        else{
+                            branch_taken = 0;
+                        }
+                    }
                 }
-                else
-                    ; // do nothing
+                else{
+                    branch_taken = 0;
+                }
             }
 
             // operands
@@ -1008,13 +1039,13 @@ char *address_to_binary(const char* decimalString) {
 }
 
 int main(int argc, char* argv[]) {
-    FILE* file = fopen("mips.txt", "r");
+    FILE* file = fopen("branch_test.txt", "r");
     int final_total_lines = 0;
 
     int num_lines = 0;
     fscanf(file, "%d", &num_lines);
     
-    final_total_lines = parse_input_file("mips2.txt");
+    final_total_lines = parse_input_file("branch_test.txt");
     // printf("%d\n", final_total_lines);
     Inst** instructions = (Inst**)malloc(final_total_lines * sizeof(Inst*));
     parse_instructions("temp.txt", instructions, final_total_lines);
@@ -1024,11 +1055,13 @@ int main(int argc, char* argv[]) {
     execute(final_total_lines, instructions);
     
     //  printf("LABEL\tTYPE\tMNEMONIC ADDRESS\tOPERANDS\n");
-    // for (int i=0; i<final_total_lines-1; i++) {
+    // for (int i=0; i<final_total_lines; i++) {
     //     printf("%s\t%s\t%s\t%s\t", instructions[i]->label, instructions[i]->type, instructions[i]->mnemonic, instructions[i]->address);
         
     //     for (int j=0; j<3; j++)
-    //         printf("%s ", instructions[i]->operands[j]);
+    //         if(instructions[i]->operands[j] != NULL){
+    //             printf("%s ", instructions[i]->operands[j]);
+    //         }
     //     printf("\n");
     // }
 
