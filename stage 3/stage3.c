@@ -472,12 +472,14 @@ void execute(int num_lines, Inst** instructions) {
             // funct
             if (strcmp(instructions[i]->mnemonic, "add") == 0) {
                 instructions[i]->binaryArr[5] = strdup("100000");
-                if(regFile[reg_to_index(instructions[i]->operands[1])] + regFile[reg_to_index(instructions[i]->operands[2])] <= 2147483647){
-                    regFile[reg_to_index(instructions[i]->operands[0])] =
-                        regFile[reg_to_index(instructions[i]->operands[1])] + regFile[reg_to_index(instructions[i]->operands[2])];
+                if(regFile[reg_to_index(instructions[i]->operands[1])] > 0 && 
+                    regFile[reg_to_index(instructions[i]->operands[2])] > INT_MAX - regFile[reg_to_index(instructions[i]->operands[1])]){
+                    printf("overflow add\n");
+                    // how to deal with overflow??
                 }
                 else{
-                    //integer overflow
+                    regFile[reg_to_index(instructions[i]->operands[0])] =
+                        regFile[reg_to_index(instructions[i]->operands[1])] + regFile[reg_to_index(instructions[i]->operands[2])];
                 }
             }
             else if (strcmp(instructions[i]->mnemonic, "move") == 0) {         // 20
@@ -492,12 +494,14 @@ void execute(int num_lines, Inst** instructions) {
             }
             else if (strcmp(instructions[i]->mnemonic, "sub") == 0) {     // 22
                 instructions[i]->binaryArr[5] = strdup("100010");
-                if(regFile[reg_to_index(instructions[i]->operands[1])] - regFile[reg_to_index(instructions[i]->operands[2])] >= -2147483648){
-                    regFile[reg_to_index(instructions[i]->operands[0])] =
-                        regFile[reg_to_index(instructions[i]->operands[1])] - regFile[reg_to_index(instructions[i]->operands[2])];
+                if(regFile[reg_to_index(instructions[i]->operands[1])] < 0 && 
+                    regFile[reg_to_index(instructions[i]->operands[2])] < INT16_MIN - regFile[reg_to_index(instructions[i]->operands[1])]){
+                    printf("underflow sub\n");
+                    // how to deal with underflow??
                 }
                 else{
-                    //integer underflow
+                    regFile[reg_to_index(instructions[i]->operands[0])] =
+                        regFile[reg_to_index(instructions[i]->operands[1])] - regFile[reg_to_index(instructions[i]->operands[2])];
                 }
             }
             else if (strcmp(instructions[i]->mnemonic, "subu") == 0) {    // 23
@@ -579,19 +583,26 @@ void execute(int num_lines, Inst** instructions) {
             // opcode
             if (strcmp(instructions[i]->mnemonic, "addi") == 0) {           // 8
                 instructions[i]->binaryArr[0] = strdup("001000");
-                regFile[reg_to_index(instructions[i]->operands[0])] =
-                    regFile[reg_to_index(instructions[i]->operands[1])] + atoi(instructions[i]->operands[2]);
+                if(regFile[reg_to_index(instructions[i]->operands[1])] > 0 && 
+                    atoi(instructions[i]->operands[2]) > INT_MAX - regFile[reg_to_index(instructions[i]->operands[1])]){
+                    printf("overflow addi\n");
+                    // how to deal with overflow??
+                }
+                else{
+                    regFile[reg_to_index(instructions[i]->operands[0])] =
+                        regFile[reg_to_index(instructions[i]->operands[1])] + atoi(instructions[i]->operands[2]);
+                }
             }
             else if (strcmp(instructions[i]->mnemonic, "addiu") == 0) {     // 9
                 instructions[i]->binaryArr[0] = strdup("001001");
-                // NO OPERATIONS LOGIC YET
+                regFile[reg_to_index(instructions[i]->operands[0])] =
+                    regFile[reg_to_index(instructions[i]->operands[1])] + atoi(instructions[i]->operands[2]);
             }
             else if (strcmp(instructions[i]->mnemonic, "ori") == 0) {    // d
                 instructions[i]->binaryArr[0] = strdup("001101");
                 regFile[reg_to_index(instructions[i]->operands[0])] =
                     0 | atoi(instructions[i]->operands[1]);
 
-                // WIP !!!!
 
                 // print
                 if (strcmp(instructions[i]->operands[2], "1") == 0 && strcmp(instructions[i]->operands[0], "$v0") == 0){
@@ -1012,19 +1023,19 @@ int main(int argc, char* argv[]) {
     
     execute(final_total_lines, instructions);
     
-     printf("LABEL\tTYPE\tMNEMONIC ADDRESS\tOPERANDS\n");
-    for (int i=0; i<final_total_lines-1; i++) {
-        printf("%s\t%s\t%s\t%s\t", instructions[i]->label, instructions[i]->type, instructions[i]->mnemonic, instructions[i]->address);
+    //  printf("LABEL\tTYPE\tMNEMONIC ADDRESS\tOPERANDS\n");
+    // for (int i=0; i<final_total_lines-1; i++) {
+    //     printf("%s\t%s\t%s\t%s\t", instructions[i]->label, instructions[i]->type, instructions[i]->mnemonic, instructions[i]->address);
         
-        for (int j=0; j<3; j++)
-            printf("%s ", instructions[i]->operands[j]);
-        printf("\n");
-    }
+    //     for (int j=0; j<3; j++)
+    //         printf("%s ", instructions[i]->operands[j]);
+    //     printf("\n");
+    // }
 
-    printf("%s ", data_array[0][0]);
-    printf("%s\n", data_array[0][1]);
-    printf("%s ", data_array[1][0]);
-    printf("%s\n", data_array[1][1]);
+    // printf("%s ", data_array[0][0]);
+    // printf("%s\n", data_array[0][1]);
+    // printf("%s ", data_array[1][0]);
+    // printf("%s\n", data_array[1][1]);
 
     free(instructions);
     return 0;
