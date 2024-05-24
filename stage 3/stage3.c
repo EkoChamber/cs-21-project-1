@@ -17,6 +17,7 @@ char** split(char*);
 
 int final_total_lines = 0;
 char* data_array[MAX_ARR_SIZE][3];
+int memory_array[MAX_ARR_SIZE][2];
 
 typedef struct instruction_line Inst;
 struct instruction_line {
@@ -112,18 +113,20 @@ char** check_macro_pseudo(char* input_str) {
         return_str[1] = "end str";
         return return_str;
     }
-    else if (!strcmp(str[temp], "lw")) {
-        return_str = (char**)malloc(3 * sizeof(char*));
-        return_str[0] = label;
-        return_str[0] = concat_str(return_str[0], "lui ");
-        return_str[0] = concat_str(return_str[0], str[temp+2]);
-        return_str[0] = concat_str(return_str[0], ",0x1001");
-        return_str[1] = "lw ";
-        return_str[0] = concat_str(return_str[1], str[temp+1]);
-        return_str[0] = concat_str(return_str[0], ",12($at)");
-        return_str[2] = "end str";
-        return return_str;
-    }
+    // else if (!strcmp(str[temp], "lw")) {
+    //     return_str = (char**)malloc(3 * sizeof(char*));
+    //     return_str[0] = label;
+    //     return_str[0] = concat_str(return_str[0], "lui ");
+    //     return_str[0] = concat_str(return_str[0], str[temp+2]);
+    //     return_str[0] = concat_str(return_str[0], ",0x1001");
+    //     return_str[1] = "lw ";
+    //     return_str[1] = concat_str(return_str[1], str[temp+1]);
+    //     return_str[1] = concat_str(return_str[1], ",12(");
+    //     return_str[1] = concat_str(return_str[1], str[temp+2]);
+    //     return_str[1] = concat_str(return_str[1], ")");
+    //     return_str[2] = "end str";
+    //     return return_str;
+    // }
     else if (!strcmp(str[temp], "print_str")) {
         return_str = (char**)malloc(4 * sizeof(char*));
         return_str[0] = label;
@@ -432,6 +435,7 @@ void execute(int num_lines, Inst** instructions) {
     FILE* execute = fopen("execute.txt", "w");
     ftruncate(fileno(execute), 0);
     int regFile[32];
+    int syscall_info;
     int temp = 0;
     int target_i = 0;
     int branch_taken = 0;
@@ -463,6 +467,37 @@ void execute(int num_lines, Inst** instructions) {
                 fprintf(execute, "%s", instructions[i]->binaryArr[j]);
             }
             fprintf(execute, "\n");
+
+            
+            // print
+            if (syscall_info == 1){
+                printf("%d\n", regFile[4]);
+            }
+            else if (syscall_info == 4){
+                temp = ((regFile[4] - 268435456) / 4) - 1;
+                if(temp >= 0){
+                    printf("%s\n", data_array[temp][1]);
+                }
+            }
+            else if (syscall_info == 11){
+                temp = ((regFile[4] - 268435456) / 4) - 1;
+                if(temp >= 0){
+                    printf("%s\n", data_array[temp][1]);
+                }
+            }
+
+            // read
+            else if (syscall_info == 5){
+                scanf("%d", &regFile[2]);
+            }
+            else if (syscall_info == 8){
+                scanf("%s", &regFile[2]);
+            }
+
+            //exit
+            else if (syscall_info == 10){
+                exit(1);
+            }
         }
 
         // R type
@@ -478,8 +513,7 @@ void execute(int num_lines, Inst** instructions) {
                 instructions[i]->binaryArr[5] = strdup("100000");
                 if(regFile[reg_to_index(instructions[i]->operands[1])] > 0 && 
                     regFile[reg_to_index(instructions[i]->operands[2])] > INT_MAX - regFile[reg_to_index(instructions[i]->operands[1])]){
-                    printf("overflow add\n");
-                    // how to deal with overflow??
+                    exit(1);
                 }
                 else{
                     regFile[reg_to_index(instructions[i]->operands[0])] =
@@ -500,8 +534,7 @@ void execute(int num_lines, Inst** instructions) {
                 instructions[i]->binaryArr[5] = strdup("100010");
                 if(regFile[reg_to_index(instructions[i]->operands[1])] < 0 && 
                     regFile[reg_to_index(instructions[i]->operands[2])] < INT16_MIN - regFile[reg_to_index(instructions[i]->operands[1])]){
-                    printf("underflow sub\n");
-                    // how to deal with underflow??
+                    exit(1);
                 }
                 else{
                     regFile[reg_to_index(instructions[i]->operands[0])] =
@@ -589,8 +622,7 @@ void execute(int num_lines, Inst** instructions) {
                 instructions[i]->binaryArr[0] = strdup("001000");
                 if(regFile[reg_to_index(instructions[i]->operands[1])] > 0 && 
                     atoi(instructions[i]->operands[2]) > INT_MAX - regFile[reg_to_index(instructions[i]->operands[1])]){
-                    printf("overflow addi\n");
-                    // how to deal with overflow??
+                    exit(1);
                 }
                 else{
                     regFile[reg_to_index(instructions[i]->operands[0])] =
@@ -602,30 +634,12 @@ void execute(int num_lines, Inst** instructions) {
                 regFile[reg_to_index(instructions[i]->operands[0])] =
                     regFile[reg_to_index(instructions[i]->operands[1])] + atoi(instructions[i]->operands[2]);
             }
-            else if (strcmp(instructions[i]->mnemonic, "ori") == 0) {    // d
+            else if (strcmp(instructions[i]->mnemonic, "ori") == 0 && strcmp(instructions[i]->operands[0], "$v0") == 0) {    // d
                 instructions[i]->binaryArr[0] = strdup("001101");
                 regFile[reg_to_index(instructions[i]->operands[0])] =
                     0 | atoi(instructions[i]->operands[1]);
 
-
-                // print
-                if (strcmp(instructions[i]->operands[2], "1") == 0 && strcmp(instructions[i]->operands[0], "$v0") == 0){
-                    printf("%d\n", regFile[4]);
-                }
-                else if (strcmp(instructions[i]->operands[2], "4") == 0 && strcmp(instructions[i]->operands[0], "$v0") == 0){
-                    temp = ((regFile[4] - 268435456) / 4) - 1;
-                    if(temp >= 0){
-                        printf("%s\n", data_array[temp][1]);
-                    }
-                }
-
-                // read
-                else if (strcmp(instructions[i]->operands[2], "5") == 0 && strcmp(instructions[i]->operands[0], "$v0") == 0){
-                    scanf("%d", &regFile[reg_to_index(instructions[i]->operands[0])]);
-                }
-                else if (strcmp(instructions[i]->operands[2], "8") == 0 && strcmp(instructions[i]->operands[0], "$v0") == 0){
-                    scanf("%s", &regFile[reg_to_index(instructions[i]->operands[0])]);
-                }
+                syscall_info = atoi(instructions[i]->operands[2]);
 
             }
             else if (strcmp(instructions[i]->mnemonic, "ori") == 0) {     // d
@@ -752,20 +766,44 @@ void execute(int num_lines, Inst** instructions) {
             if (strcmp(instructions[i]->mnemonic, "lw") == 0) {             // 23
                 instructions[i]->binaryArr[0] = strdup("100011");
                 
-                int memAddress = 0;
-                memAddress = atoi(instructions[i]->operands[1]) + regFile[reg_to_index(instructions[i]->operands[2])];
+                int mem_address = 0;
+                mem_address = atoi(instructions[i]->operands[1]) + regFile[reg_to_index(instructions[i]->operands[2])];
 
-                regFile[reg_to_index(instructions[i]->operands[0])] = memAddress;
-                // WIP -- need to actually access the value of the mem address first
+                for(int j = 0; j < MAX_ARR_SIZE; j++){
+                    if(memory_array[j][0] == 0 && memory_array[j][1] == 0){
+                        memory_array[j][0] = regFile[reg_to_index(instructions[i]->operands[0])];
+                        memory_array[j][1] = mem_address;
+                        break;
+                    }
+                    else{
+                        if(memory_array[j][1] == mem_address){
+                            regFile[reg_to_index(instructions[i]->operands[0])] = memory_array[j][0];
+                            break;
+                        }
+                    }
+                }
+
+                
             }
             else if (strcmp(instructions[i]->mnemonic, "sw") == 0) {        // 2b
                 instructions[i]->binaryArr[0] = strdup("101011");
 
-                int memAddress = 0;
-                memAddress = atoi(instructions[i]->operands[1]) + regFile[reg_to_index(instructions[i]->operands[2])];
+                int mem_address = 0;
+                mem_address = atoi(instructions[i]->operands[1]) + regFile[reg_to_index(instructions[i]->operands[2])];
 
-                regFile[reg_to_index(instructions[i]->operands[0])] = memAddress;
-                // WIP -- need to actually access the value of the mem address first
+                for(int j = 0; j < MAX_ARR_SIZE; j++){
+                    if(memory_array[j][0] == 0 && memory_array[j][1] == 0){
+                        memory_array[j][0] = regFile[reg_to_index(instructions[i]->operands[0])];
+                        memory_array[j][1] = mem_address;
+                        break;
+                    }
+                    else{
+                        if(memory_array[j][1] == regFile[reg_to_index(instructions[i]->operands[1])]){
+                            memory_array[j][0] = regFile[reg_to_index(instructions[i]->operands[0])];
+                            break;
+                        }
+                    }
+                }
             }
 
             // operands
@@ -788,8 +826,16 @@ void execute(int num_lines, Inst** instructions) {
                 instructions[i]->binaryArr[0] = strdup("000010");
 
                 regFile[29] = 11111111;    // sp
-                // change i
-                // WIP
+                // for(int j = 0; j < num_lines; j++){
+                //     if(strstr(instructions[j]->label, instructions[i]->operands[0]) != NULL){
+                //         target_i = j;
+                //         branch_taken = 1;
+                //         break;
+                //     }
+                //     else{
+                //         branch_taken = 0;
+                //     }
+                // }
             }
             else if (strcmp(instructions[i]->mnemonic, "jal") == 0) {     // 9
                 instructions[i]->binaryArr[0] = strdup("000011");
@@ -1039,13 +1085,25 @@ char *address_to_binary(const char* decimalString) {
 }
 
 int main(int argc, char* argv[]) {
-    FILE* file = fopen("branch_test.txt", "r");
+    FILE* file = fopen("mips2.txt", "r");
     int final_total_lines = 0;
 
     int num_lines = 0;
     fscanf(file, "%d", &num_lines);
+
+    for(int i = 0; i < MAX_ARR_SIZE; i++){
+        for(int j = 0; j < 2; j++){
+            memory_array[i][j] = 0;
+        }
+    }
+
+    for(int i = 0; i < MAX_ARR_SIZE; i++){
+        for(int j = 0; j < 2; j++){
+            data_array[i][j] = NULL;
+        }
+    }
     
-    final_total_lines = parse_input_file("branch_test.txt");
+    final_total_lines = parse_input_file("mips2.txt");
     // printf("%d\n", final_total_lines);
     Inst** instructions = (Inst**)malloc(final_total_lines * sizeof(Inst*));
     parse_instructions("temp.txt", instructions, final_total_lines);
@@ -1054,21 +1112,21 @@ int main(int argc, char* argv[]) {
     
     execute(final_total_lines, instructions);
     
-    //  printf("LABEL\tTYPE\tMNEMONIC ADDRESS\tOPERANDS\n");
-    // for (int i=0; i<final_total_lines; i++) {
-    //     printf("%s\t%s\t%s\t%s\t", instructions[i]->label, instructions[i]->type, instructions[i]->mnemonic, instructions[i]->address);
+     printf("LABEL\tTYPE\tMNEMONIC ADDRESS\tOPERANDS\n");
+    for (int i=0; i<final_total_lines; i++) {
+        printf("%s\t%s\t%s\t%s\t", instructions[i]->label, instructions[i]->type, instructions[i]->mnemonic, instructions[i]->address);
         
-    //     for (int j=0; j<3; j++)
-    //         if(instructions[i]->operands[j] != NULL){
-    //             printf("%s ", instructions[i]->operands[j]);
-    //         }
-    //     printf("\n");
-    // }
+        for (int j=0; j<3; j++)
+            if(instructions[i]->operands[j] != NULL){
+                printf("%s ", instructions[i]->operands[j]);
+            }
+        printf("\n");
+    }
 
-    // printf("%s ", data_array[0][0]);
-    // printf("%s\n", data_array[0][1]);
-    // printf("%s ", data_array[1][0]);
-    // printf("%s\n", data_array[1][1]);
+    // printf("%d ", memory_array[0][0]);
+    // printf("%d\n", memory_array[0][1]);
+    // printf("%d ", memory_array[1][0]);
+    // printf("%d\n", memory_array[1][1]);
 
     free(instructions);
     return 0;
