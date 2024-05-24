@@ -7,11 +7,16 @@
 
 #define MAX_LINE_LENGTH 256
 #define MAX_ARR_SIZE 100
+#define INT_MAX 4294967295
 
 int reg_to_index(const char*);
+int hex_to_decimal(const char*);
+char* imm_int_to_binary(int decimal);
 char* concat_str(const char*, const char*);
 char* convert_register(const char*);
 char* imm_to_binary(const char*);
+char* prep_JTA(const char*);
+char* prep_BTA(const char*);
 char* address_to_binary(const char*);
 char** split(char*);
 
@@ -439,6 +444,7 @@ void execute(int num_lines, Inst** instructions) {
     int temp = 0;
     int target_i = 0;
     int branch_taken = 0;
+    int return_address = 0;
 
     for (int i = 0; i < 31; i++) {
         regFile[i] = 0;
@@ -669,17 +675,22 @@ void execute(int num_lines, Inst** instructions) {
         // branch
         else if (strcmp(instructions[i]->type, "branch") == 0) {
             instructions[i]->binaryArr = (char**)malloc(4 * sizeof(char*));
+            int BTA;
         
             // opcode
             if (strcmp(instructions[i]->mnemonic, "beq") == 0) {            // 4
                 instructions[i]->binaryArr[0] = strdup("000100");
 
                 if (regFile[reg_to_index(instructions[i]->operands[0])] == regFile[reg_to_index(instructions[i]->operands[1])]) {
-                    regFile[29] = 11111111;    // sp
+
                     for(int j = 0; j < num_lines; j++){
                         if(strstr(instructions[j]->label, instructions[i]->operands[2]) != NULL){
                             target_i = j;
                             branch_taken = 1;
+
+                            BTA = hex_to_decimal(instructions[j]->address) - hex_to_decimal(instructions[i+1]->address);
+                            instructions[i]->binaryArr[3] = strdup(imm_int_to_binary(BTA));
+
                             break;
                         }
                         else{
@@ -695,11 +706,14 @@ void execute(int num_lines, Inst** instructions) {
                 instructions[i]->binaryArr[0] = strdup("000100");
 
                 if (regFile[reg_to_index(instructions[i]->operands[0])] == 0) {
-                    regFile[29] = 11111111;    // sp
                     for(int j = 0; j < num_lines; j++){
                         if(strstr(instructions[j]->label, instructions[i]->operands[1]) != NULL){
                             target_i = j;
                             branch_taken = 1;
+
+                            BTA = hex_to_decimal(instructions[j]->address) - hex_to_decimal(instructions[i+1]->address);
+                            instructions[i]->binaryArr[3] = strdup(imm_int_to_binary(BTA));
+
                             break;
                         }
                         else{
@@ -715,11 +729,14 @@ void execute(int num_lines, Inst** instructions) {
                 instructions[i]->binaryArr[0] = strdup("000101");
 
                 if (regFile[reg_to_index(instructions[i]->operands[0])] != regFile[reg_to_index(instructions[i]->operands[1])]) {
-                    regFile[29] = 11111111;    // sp
                     for(int j = 0; j < num_lines; j++){
                         if(strstr(instructions[j]->label, instructions[i]->operands[2]) != NULL){
                             target_i = j;
                             branch_taken = 1;
+
+                            BTA = hex_to_decimal(instructions[j]->address) - hex_to_decimal(instructions[i+1]->address);
+                            instructions[i]->binaryArr[3] = strdup(imm_int_to_binary(BTA));
+
                             break;
                         }
                         else{
@@ -735,22 +752,6 @@ void execute(int num_lines, Inst** instructions) {
             // operands
             instructions[i]->binaryArr[1] = convert_register(instructions[i]->operands[0]);
             instructions[i]->binaryArr[2] = convert_register(instructions[i]->operands[1]);
-
-            /*for (int j=0; j<num_lines; j++) {
-                // if (instructions[j] != NULL && instructions[j]->label != NULL && instructions[i]->operands[2] != NULL) {
-                    if (strcmp(instructions[j]->label, instructions[i]->operands[2]) == 0) {
-                        int BTA = atoi(instructions[i]->address) - atoi(instructions[j]->address);
-                        char BTA_string[16];
-                        sprintf(BTA_string, "%d", BTA);
-                        instructions[i]->binaryArr[3] = imm_to_binary(BTA_string);
-
-                        continue;
-                    }
-                // }
-                continue;
-            }*/
-
-            instructions[i]->binaryArr[3] = strdup("0000000000000000");
 
             for (int j=0; j<4; j++) {
                 fprintf(execute, "%s", instructions[i]->binaryArr[j]);
@@ -825,36 +826,33 @@ void execute(int num_lines, Inst** instructions) {
             if (strcmp(instructions[i]->mnemonic, "j") == 0) {           // 8
                 instructions[i]->binaryArr[0] = strdup("000010");
 
-                regFile[29] = 11111111;    // sp
-                // for(int j = 0; j < num_lines; j++){
-                //     if(strstr(instructions[j]->label, instructions[i]->operands[0]) != NULL){
-                //         target_i = j;
-                //         branch_taken = 1;
-                //         break;
-                //     }
-                //     else{
-                //         branch_taken = 0;
-                //     }
-                // }
+                for (int j=0; j<num_lines; j++) {
+                    if (strstr(instructions[j]->label, instructions[i]->operands[0]) != NULL) {
+                        target_i = j;
+                        branch_taken = 1;
+                        instructions[i]->binaryArr[1] = strdup(prep_JTA(instructions[j]->address));
+                        break;
+                    }
+                    else
+                        branch_taken = 0;
+                }
             }
             else if (strcmp(instructions[i]->mnemonic, "jal") == 0) {     // 9
                 instructions[i]->binaryArr[0] = strdup("000011");
 
-                regFile[29] = 11111111;    // sp
-                // change i
-                // WIP
-            }
-
-            // operands
-            /* for (int j=0; j<num_lines; j++) {
-                if (strcmp(instructions[j]->label, instructions[i]->operands[0]) == 0) {
-                    int JTA = atoi(instructions[j]->address);
-                    char JTA_string[16];
-                    sprintf(JTA_string, "%d", JTA);
-                    instructions[i]->binaryArr[1] = address_to_binary(JTA_string);
-                    break;
+                for (int j=0; j<num_lines; j++) {
+                    if (strstr(instructions[j]->label, instructions[i]->operands[0]) != NULL) {
+                        target_i = j;
+                        branch_taken = 1;
+                        return_address = i+1;
+                        regFile[31] = atoi(instructions[j]->address) + 4;
+                        instructions[i]->binaryArr[1] = strdup(prep_JTA(instructions[j]->address));
+                        break;
+                    }
+                    else
+                        branch_taken = 0;
                 }
-            } */
+            }
         
             for (int j=0; j<2; j++) {
                 fprintf(execute, "%s", instructions[i]->binaryArr[j]);
@@ -870,6 +868,9 @@ void execute(int num_lines, Inst** instructions) {
             instructions[i]->binaryArr[1] = convert_register(instructions[i]->operands[0]);
             instructions[i]->binaryArr[2] = strdup("000000000000000");
             instructions[i]->binaryArr[3] = strdup("001000");
+
+            target_i = return_address;
+            branch_taken = 1;
         
             for (int j=0; j<4; j++) {
                 fprintf(execute, "%s", instructions[i]->binaryArr[j]);
@@ -1029,6 +1030,102 @@ char *imm_to_binary(const char* decimalString) {
         }
     }
     return binary;
+}
+
+char *imm_int_to_binary(int decimal) {
+    char* binary = malloc(17);
+    int numBits = sizeof(int) * 4;
+    int i = 0;
+    int negative = 0;
+
+    // negative
+    if (decimal < 0) {
+        negative = 1;
+        decimal = -decimal; // convert to positive
+    }
+
+    if (decimal == 0)
+        binary[i++] = '0';
+    else {
+        while (decimal > 0) {
+            binary[i++] = (decimal % 2) + '0';
+            decimal /= 2;
+        }
+    }
+
+    // leading zeros
+    while (i < 16)
+        binary[i++] = '0';
+
+    // apply 2C if the number was negative
+    if (negative) {
+        for (int j = 0; j < 16; j++)
+            binary[j] = (binary[j] == '0') ? '1' : '0';
+        int carry = 1;
+        for (int j = 0; j < 16; j++) {
+            int bit = (binary[j] - '0') + carry;
+            binary[j] = (bit % 2) + '0';
+            carry = bit / 2;
+        }
+    }
+    return binary;
+}
+
+char *hex_digit_to_binary(char hexDigit) {
+    switch(hexDigit) {
+        case '0': return "0000";
+        case '1': return "0001";
+        case '2': return "0010";
+        case '3': return "0011";
+        case '4': return "0100";
+        case '5': return "0101";
+        case '6': return "0110";
+        case '7': return "0111";
+        case '8': return "1000";
+        case '9': return "1001";
+        case 'A': return "1010";
+        case 'B': return "1011";
+        case 'C': return "1100";
+        case 'D': return "1101";
+        case 'E': return "1110";
+        case 'F': return "1111";
+        default: return NULL;
+    }
+}
+
+char *hex_to_binary(const char *hex_string) {
+    size_t hex_len = strlen(hex_string);
+    size_t binary_len = hex_len * 4;
+    char *binary_string = (char *)malloc(binary_len + 1);
+
+    binary_string[binary_len] = '\0';
+
+    for (size_t i = 0; i < hex_len; i++) {
+        char *binary_digit = hex_digit_to_binary(hex_string[i]);
+        strcat(binary_string, binary_digit);
+    }
+
+    return binary_string;
+}
+
+char *prep_JTA(const char* hexAddress) {
+    char *binary = (char *)malloc(32 * sizeof(char));
+    char *JTA = (char *)malloc(27 * sizeof(char));
+
+    binary = strdup(hex_to_binary(hexAddress));
+
+    strncpy(JTA, binary+4, 26);
+    JTA[26] = '\0';
+
+    free(binary);
+
+    return JTA;
+}
+
+int hex_to_decimal(const char* hexString) {
+    int decimal = 0;
+    sscanf(hexString, "%x", &decimal);
+    return decimal;
 }
 
 char *address_to_binary(const char* decimalString) {
