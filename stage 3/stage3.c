@@ -1182,7 +1182,7 @@ char *address_to_binary(const char* decimalString) {
 }
 
 int main(int argc, char* argv[]) {
-    FILE* file = fopen("mips2.txt", "r");
+    FILE* file = fopen("mips3.txt", "r");
     int final_total_lines = 0;
 
     int num_lines = 0;
@@ -1200,7 +1200,7 @@ int main(int argc, char* argv[]) {
         }
     }
     
-    final_total_lines = parse_input_file("mips2.txt");
+    final_total_lines = parse_input_file("mips3.txt");
     // printf("%d\n", final_total_lines);
     Inst** instructions = (Inst**)malloc(final_total_lines * sizeof(Inst*));
     parse_instructions("temp.txt", instructions, final_total_lines);
