@@ -1081,7 +1081,7 @@ int reg_to_index(const char* regName) {
 }
 
 char *imm_to_binary(const char* decimalString) {
-    char binary[17];
+    char* binary = malloc(17);
     int decimal = atoi(decimalString);
     int numBits = sizeof(int) * 4;
     int i = 0;
@@ -1197,10 +1197,15 @@ char *hex_to_binary(const char *hex_string) {
 }
 
 char *prep_JTA(const char* hexAddress) {
-    char *binary = (char *)malloc(32 * sizeof(char));
-    char JTA [27];
-
-    binary = strdup(hex_to_binary(hexAddress));
+    char* binary = malloc(32);
+    char* JTA = malloc(27);
+    char* fullHA = malloc(8); 
+    
+    fullHA = strdup("00");
+    strcat(fullHA, hexAddress);
+    
+    binary = strdup(hex_to_binary(fullHA));
+    // binary = strdup(hexAddress);
 
     strncpy(JTA, binary+4, 26);
     JTA[26] = '\0';
