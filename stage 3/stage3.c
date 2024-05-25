@@ -107,31 +107,16 @@ char** check_macro_pseudo(char* input_str) {
         return_str[1] = "end str";
         return return_str;
     }
-    /* else if (!strcmp(str[temp], "la")) {
-        // get address
-
-        int upper = (address >> 16) & 0xFFFF;
-        int lower = address & 0xFFFF;
-
-        // int upper = (atoi(str[temp+1]) >> 16) & 0xFFFF;
-        // int lower = atoi(str[temp+1]) & 0xFFFF;
-
-        char upper_str[10];
-        char lower_str[10];
-        sprintf(upper_str, "%d", upper);
-        sprintf(lower_str, "%d", lower);
-
-        return_str = (char**)malloc(2 * sizeof(char*));
+    else if (!strcmp(str[temp], "la")) {
+        return_str = (char**)malloc(3 * sizeof(char*));
         return_str[0] = label;
-        return_str[0] = concat_str(return_str[0], "lui $at,");
-        return_str[0] = concat_str(return_str[0], upper_str);
-        return_str[0] = concat_str(return_str[0], "\nori ");
-        return_str[0] = concat_str(return_str[0], str[temp+1]);
-        return_str[0] = concat_str(return_str[0], ",$at,");
-        return_str[0] = concat_str(return_str[0], lower_str);
-        return_str[1] = "end str";
+        return_str[0] = concat_str(return_str[0], "lui $at,0x1000");
+        return_str[1] = concat_str(return_str[1], "ori ");
+        return_str[1] = concat_str(return_str[1], str[temp+1]);
+        return_str[1] = concat_str(return_str[1], ",$at,16");
+        return_str[2] = "end str";
         return return_str;
-    } */
+    } 
     // else if (!strcmp(str[temp], "lw")) {
     //     return_str = (char**)malloc(3 * sizeof(char*));
     //     return_str[0] = label;
