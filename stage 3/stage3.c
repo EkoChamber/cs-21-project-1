@@ -198,9 +198,10 @@ void parse_data(char *line, int num_data_line) {
         data_array[num_data_line][1] = parsed_line[2];
     }
     else {
-        for (int i = 0; i < 2; i++) {
-            data_array[num_data_line][i] = parsed_line[i+1];
-        }
+        data_array[num_data_line][0] = parsed_line[1];
+        data_array[num_data_line][1] = parsed_line[2];
+        data_array[num_data_line][1]++;
+        data_array[num_data_line][1][strlen(data_array[num_data_line][1])-2] = '\0';
     }
 }
 
@@ -258,7 +259,7 @@ int parse_input_file(const char* filename) {
         
         if (!is_data_seg) {
             for (int a=0; a<=len_pseudo; a++) {
-                if (strstr(to_parse[a], ".text") == NULL && strstr(to_parse[a], ".data") == NULL ) {
+                if (strstr(to_parse[a], ".text") == NULL && strstr(to_parse[a], ".data") == NULL && strstr(to_parse[a], ".include") == NULL) {
                     fprintf(temp, "%s\n", to_parse[a]);
                     lines_counter++;
                 }
@@ -691,6 +692,7 @@ void execute(int num_lines, Inst** instructions) {
     char temp_str[1000];
 
     for (int i = 0; i < (num_lines); i++) {
+        // printf("%s %s\n", instructions[i]->mnemonic, instructions[i]->operands[0]);
 
         if (branch_taken == 1){
             i = target_i;
@@ -699,8 +701,8 @@ void execute(int num_lines, Inst** instructions) {
         // printf("%d: %s %s\n", i, instructions[i]->mnemonic, instructions[i]->operands[0]);
 
         //pseudo running of the print and read int and str macros
-        if(((strstr(instructions[i]->mnemonic, "addiu") != NULL && strstr(instructions[i]->operands[0], "$v0") != NULL && strstr(instructions[i]->operands[1], "$0") != NULL) ||
-            (strstr(instructions[i]->mnemonic, "li") != NULL && strstr(instructions[i-2]->mnemonic, "la") != NULL)) && i > 2){
+        if((strstr(instructions[i]->mnemonic, "addiu") != NULL && strstr(instructions[i]->operands[0], "$v0") != NULL) ||
+            (strstr(instructions[i]->mnemonic, "li") != NULL && strstr(instructions[i-2]->mnemonic, "ori") != NULL && i > 2)){
             for (int i = 0; i < MAX_ARR_SIZE; i++)
             {
                 if(var_buffer[i][0] == NULL && var_buffer[i][1] == NULL){
@@ -737,7 +739,6 @@ void execute(int num_lines, Inst** instructions) {
                                 data_array[j][0] = var_buffer[i][1];
                                 fgets(temp_str, 1000, stdin);
                                 if (strlen(temp_str) > 0 && temp_str[strlen(temp_str) - 1] == '\n') {
-                                    // Replace the newline character with a null terminator
                                     temp_str[strlen(temp_str) - 1] = '\0';
                                 }
                                 data_array[j][1] = temp_str;
@@ -746,7 +747,6 @@ void execute(int num_lines, Inst** instructions) {
                             else if(strstr(data_array[j][0], var_buffer[i][1]) != NULL){
                                 fgets(temp_str, 1000, stdin);
                                 if (strlen(temp_str) > 0 && temp_str[strlen(temp_str) - 1] == '\n') {
-                                    // Replace the newline character with a null terminator
                                     temp_str[strlen(temp_str) - 1] = '\0';
                                 }
                                 data_array[j][1] = temp_str;
@@ -1055,11 +1055,11 @@ void execute(int num_lines, Inst** instructions) {
             printf("Instruction not supported\n");
         }
     }
-    for (int j = 8; j <= 15; j++)
-    {
-        printf("%d\n", regFile[j]);
-    }
-    printf("%d\n", regFile[2]);
+    // for (int j = 8; j <= 15; j++)
+    // {
+    //     printf("%d\n", regFile[j]);
+    // }
+    // printf("%d\n", regFile[2]);
 }
 
 char *convert_register(const char* regName) {
@@ -1406,12 +1406,12 @@ int main(int argc, char* argv[]) {
     // printf("%s\n", var_buffer[0][1]);
     // printf("%s ", var_buffer[1][0]);
     // printf("%s\n", var_buffer[1][1]);
+    // printf("%s ", var_buffer[2][0]);
+    // printf("%s\n", var_buffer[2][1]);
     
 
-    // printf("%d ", memory_array[0][0]);
-    // printf("%d\n", memory_array[0][1]);
-    // printf("%d ", memory_array[1][0]);
-    // printf("%d\n", memory_array[1][1]);
+    // printf("%s ", data_array[2][0]);
+    // printf("%s\n", data_array[2][1]);
 
     free(instructions);
     return 0;
