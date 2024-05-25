@@ -45,13 +45,13 @@ char** convert_macro(char** str){
     else if (!strcmp(str[temp], "read_str")) {
         return_str = (char**)malloc(6 * sizeof(char*));
         return_str[0] = label;
-        return_str[0] = concat_str(return_str[0], "la $a0,");
-        return_str[0] = concat_str(return_str[0], str[temp+1]);
-        return_str[1] = "li $a1,";
-        return_str[1] = concat_str(return_str[1], str[temp+2]);
-        return_str[2] = "li $v0,8";
-        return_str[3] = "syscall";
-        return_str[4] = "end str";
+        return_str[0] = concat_str(return_str[0], "lui $at,4097");
+        return_str[1] = "ori $a0,$at,0";
+        return_str[2] = "li $a1,";
+        return_str[2] = concat_str(return_str[2], str[temp+2]);
+        return_str[3] = "li $v0,8";
+        return_str[4] = "syscall";
+        return_str[5] = "end str";
         return return_str;
     }
     else if (!strcmp(str[temp], "print_integer")) {
