@@ -107,6 +107,31 @@ char** check_macro_pseudo(char* input_str) {
         return_str[1] = "end str";
         return return_str;
     }
+    /* else if (!strcmp(str[temp], "la")) {
+        // get address
+
+        int upper = (address >> 16) & 0xFFFF;
+        int lower = address & 0xFFFF;
+
+        // int upper = (atoi(str[temp+1]) >> 16) & 0xFFFF;
+        // int lower = atoi(str[temp+1]) & 0xFFFF;
+
+        char upper_str[10];
+        char lower_str[10];
+        sprintf(upper_str, "%d", upper);
+        sprintf(lower_str, "%d", lower);
+
+        return_str = (char**)malloc(2 * sizeof(char*));
+        return_str[0] = label;
+        return_str[0] = concat_str(return_str[0], "lui $at,");
+        return_str[0] = concat_str(return_str[0], upper_str);
+        return_str[0] = concat_str(return_str[0], "\nori ");
+        return_str[0] = concat_str(return_str[0], str[temp+1]);
+        return_str[0] = concat_str(return_str[0], ",$at,");
+        return_str[0] = concat_str(return_str[0], lower_str);
+        return_str[1] = "end str";
+        return return_str;
+    } */
     // else if (!strcmp(str[temp], "lw")) {
     //     return_str = (char**)malloc(3 * sizeof(char*));
     //     return_str[0] = label;
@@ -349,6 +374,8 @@ void parse_instructions(const char* filename, Inst** instructions, int num_lines
                 instructions[i]->type = "div";
             else if (strcmp(instructions[i]->mnemonic, "mfhi") == 0)
                 instructions[i]->type = "mfhi";
+            else if (strcmp(instructions[i]->mnemonic, "la") == 0)
+                instructions[i]->type = "la";
             else
                 instructions[i]->type = "0";
 
@@ -659,6 +686,19 @@ void print_execute(int num_lines, Inst** instructions) {
             instructions[i]->binaryArr[3] = strdup("001000");
         
             for (int j=0; j<4; j++) {
+                fprintf(execute, "%s", instructions[i]->binaryArr[j]);
+            }
+            fprintf(execute, "\n");
+        }
+
+        // la
+        else if (strcmp(instructions[i]->type, "la") == 0) {
+            instructions[i]->binaryArr = (char**)malloc(2 * sizeof(char*));
+
+            instructions[i]->binaryArr[0] = strdup("00111100000000010001000000000001");
+            instructions[i]->binaryArr[1] = strdup("00110100001001000000000000011111");
+        
+            for (int j=0; j<2; j++) {
                 fprintf(execute, "%s", instructions[i]->binaryArr[j]);
             }
             fprintf(execute, "\n");
@@ -1354,65 +1394,34 @@ char *address_to_binary(const char* decimalString) {
 }
 
 int main(int argc, char* argv[]) {
-    FILE* file = fopen("mips.txt", "r");
+    FILE* file = fopen("mips2.txt", "r");
     int final_total_lines = 0;
 
     int num_lines = 0;
     fscanf(file, "%d", &num_lines);
 
-    for(int i = 0; i < MAX_ARR_SIZE; i++){
-        for(int j = 0; j < 2; j++){
+    for (int i = 0; i < MAX_ARR_SIZE; i++) {
+        for (int j = 0; j < 2; j++) {
             memory_array[i][j] = 0;
         }
     }
 
-    for(int i = 0; i < MAX_ARR_SIZE; i++){
-        for(int j = 0; j < 2; j++){
+    for (int i = 0; i < MAX_ARR_SIZE; i++) {
+        for (int j = 0; j < 2; j++) {
             data_array[i][j] = NULL;
         }
     }
     
-    final_total_lines = parse_input_file("mips.txt");
-    // printf("%d\n", final_total_lines);
+    final_total_lines = parse_input_file("mips2.txt");
+
     Inst** instructions = (Inst**)malloc(final_total_lines * sizeof(Inst*));
     parse_instructions("temp.txt", instructions, final_total_lines);
     
     symbol_table(final_total_lines, instructions);
-    
     print_execute(final_total_lines, instructions);
     execute(final_total_lines, instructions);
-    
-    /* printf("LABEL\tTYPE\tMNEMONIC ADDRESS\tOPERANDS\n");
-    for (int i=0; i<final_total_lines; i++) {
-        printf("%s\t%s\t%s\t%s\t", instructions[i]->label, instructions[i]->type, instructions[i]->mnemonic, instructions[i]->address);
-        
-        for (int j=0; j<3; j++)
-            if(instructions[i]->operands[j] != NULL){
-                printf("%s ", instructions[i]->operands[j]);
-            }
-        printf("\n");
-    } */
-
-    // for(int i = 0; i < MAX_ARR_SIZE; i++){
-    //     if(data_array[i][0] == NULL && data_array[i][1] == NULL){
-    //         break;
-    //     }
-    //     else{
-    //         printf("%s %s\n", data_array[i][0], data_array[i][1]);
-    //     }
-    // }
-
-    // printf("%s ", var_buffer[0][0]);
-    // printf("%s\n", var_buffer[0][1]);
-    // printf("%s ", var_buffer[1][0]);
-    // printf("%s\n", var_buffer[1][1]);
-    // printf("%s ", var_buffer[2][0]);
-    // printf("%s\n", var_buffer[2][1]);
-    
-
-    // printf("%s ", data_array[2][0]);
-    // printf("%s\n", data_array[2][1]);
 
     free(instructions);
+
     return 0;
 }
