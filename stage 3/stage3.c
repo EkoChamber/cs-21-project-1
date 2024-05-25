@@ -1081,7 +1081,7 @@ int reg_to_index(const char* regName) {
 }
 
 char *imm_to_binary(const char* decimalString) {
-    char* binary = malloc(17);
+    char binary[17];
     int decimal = atoi(decimalString);
     int numBits = sizeof(int) * 4;
     int i = 0;
@@ -1198,7 +1198,7 @@ char *hex_to_binary(const char *hex_string) {
 
 char *prep_JTA(const char* hexAddress) {
     char *binary = (char *)malloc(32 * sizeof(char));
-    char *JTA = (char *)malloc(27 * sizeof(char));
+    char JTA [27];
 
     binary = strdup(hex_to_binary(hexAddress));
 
