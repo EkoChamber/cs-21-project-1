@@ -356,7 +356,8 @@ void parse_instructions(const char* filename, Inst** instructions, int num_lines
                 (strcmp(instructions[i]->mnemonic, "slt") == 0) || (strcmp(instructions[i]->mnemonic, "move") == 0))
                 instructions[i]->type = "R";
             else if ((strcmp(instructions[i]->mnemonic, "addi") == 0) || (strcmp(instructions[i]->mnemonic, "addiu") == 0)  ||
-                (strcmp(instructions[i]->mnemonic, "li") == 0) || (strcmp(instructions[i]->mnemonic, "ori") == 0))
+                (strcmp(instructions[i]->mnemonic, "li") == 0) || (strcmp(instructions[i]->mnemonic, "ori") == 0) ||
+                (strcmp(instructions[i]->mnemonic, "lui") == 0))
                 instructions[i]->type = "I";
             else if ((strcmp(instructions[i]->mnemonic, "beq") == 0) || (strcmp(instructions[i]->mnemonic, "bne") == 0) ||
                     (strcmp(instructions[i]->mnemonic, "beqz") == 0))
@@ -544,10 +545,13 @@ void print_execute(int num_lines, Inst** instructions) {
                 instructions[i]->binaryArr[0] = strdup("001101");
 
             // operands 
-            if (strcmp(instructions[i]->mnemonic, "li") == 0) {
-                instructions[i]->binaryArr[0] = strdup("001101");
-                instructions[i]->binaryArr[2] = convert_register(instructions[i]->operands[0]);
+            if ((strcmp(instructions[i]->mnemonic, "li") == 0) || (strcmp(instructions[i]->mnemonic, "lui") == 0)) {
+                if (strcmp(instructions[i]->mnemonic, "li") == 0)
+                    instructions[i]->binaryArr[0] = strdup("001101");
+                else
+                    instructions[i]->binaryArr[0] = strdup("001111");
                 instructions[i]->binaryArr[1] = strdup("00000");
+                instructions[i]->binaryArr[2] = convert_register(instructions[i]->operands[0]);
                 instructions[i]->binaryArr[3] = imm_to_binary(instructions[i]->operands[1]);    // imm
             }
             else {
@@ -835,6 +839,10 @@ void execute(int num_lines, Inst** instructions) {
             else if (strcmp(instructions[i]->mnemonic, "ori") == 0) {     // d
                 regFile[reg_to_index(instructions[i]->operands[0])] =
                     regFile[reg_to_index(instructions[i]->operands[1])] | atoi(instructions[i]->operands[2]);
+            }
+            else if (strcmp(instructions[i]->mnemonic, "lui") == 0) {     // d
+                regFile[reg_to_index(instructions[i]->operands[0])] =
+                    atoi(instructions[i]->operands[1]) << 16;
             }
         }
 
@@ -1200,7 +1208,7 @@ char *prep_JTA(const char* hexAddress) {
     char* binary = malloc(32);
     char* JTA = malloc(27);
     char* fullHA = malloc(8); 
-    
+
     fullHA = strdup("00");
     strcat(fullHA, hexAddress);
     
