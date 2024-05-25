@@ -22,6 +22,7 @@ char** split(char*);
 int final_total_lines = 0;
 char* data_array[MAX_ARR_SIZE][3];
 int memory_array[MAX_ARR_SIZE][2];
+char* var_buffer[MAX_ARR_SIZE][2];
 
 typedef struct instruction_line Inst;
 struct instruction_line {
@@ -132,31 +133,59 @@ char** check_macro_pseudo(char* input_str) {
     //     return return_str;
     // }
     else if (!strcmp(str[temp], "print_str")) {
-        return_str = (char**)malloc(4 * sizeof(char*));
+        for (int i = 0; i < MAX_ARR_SIZE; i++)
+        {
+            if(var_buffer[i][0] == NULL && var_buffer[i][1] == NULL){
+                var_buffer[i][0] = "print str";
+                var_buffer[i][1] = strdup(str[temp+1]);
+                break;
+            }
+        }
+        return_str = (char**)malloc(5 * sizeof(char*));
         return_str[0] = label;
-        return_str[0] = concat_str(return_str[0], "li $v0,4");
-        return_str[1] = "li $a0,";
-        return_str[1] = concat_str(return_str[1], str[temp+1]);
-        return_str[2] = "syscall";
-        return_str[3] = "end str";
+        return_str[0] = concat_str(return_str[0], "lui $at,4097");
+        return_str[1] = "ori $a0,$at,0";
+        return_str[2] = "addiu $v0,$0,4";
+        return_str[3] = "syscall";
+        return_str[4] = "end str";
         return return_str;
     }
     else if (!strcmp(str[temp], "read_str")) {
-        return_str = (char**)malloc(3 * sizeof(char*));
+        for (int i = 0; i < MAX_ARR_SIZE; i++)
+        {
+            if(var_buffer[i][0] == NULL && var_buffer[i][1] == NULL){
+                var_buffer[i][0] = "read str";
+                var_buffer[i][1] = strdup(str[temp+1]);
+                break;
+            }
+        }
+        return_str = (char**)malloc(6 * sizeof(char*));
         return_str[0] = label;
-        return_str[0] = concat_str(return_str[0], "li $v0,8");
-        return_str[1] = "syscall";
-        return_str[2] = "end str";
+        return_str[0] = concat_str(return_str[0], "la $a0,");
+        return_str[0] = concat_str(return_str[0], str[temp+1]);
+        return_str[1] = "li $a1,";
+        return_str[1] = concat_str(return_str[1], str[temp+2]);
+        return_str[2] = "li $v0,8";
+        return_str[3] = "syscall";
+        return_str[4] = "end str";
         return return_str;
     }
     else if (!strcmp(str[temp], "print_integer")) {
-        return_str = (char**)malloc(4 * sizeof(char*));
+        for (int i = 0; i < MAX_ARR_SIZE; i++)
+        {
+            if(var_buffer[i][0] == NULL && var_buffer[i][1] == NULL){
+                var_buffer[i][0] = "print int";
+                var_buffer[i][1] = strdup(str[temp+1]);
+                break;
+            }
+        }
+        return_str = (char**)malloc(5 * sizeof(char*));
         return_str[0] = label;
-        return_str[0] = concat_str(return_str[0], "li $v0,1");
-        return_str[1] = "li $a0,<parameter>";
-        return_str[1] = concat_str(return_str[1], str[temp+1]);
-        return_str[2] = "syscall";
-        return_str[3] = "end str";
+        return_str[0] = concat_str(return_str[0], "lui $at,4097");
+        return_str[1] = "ori $a0,$at,0";
+        return_str[2] = "addiu $v0,$0,1";
+        return_str[3] = "syscall";
+        return_str[4] = "end str";
         return return_str;
     }
     else if (!strcmp(str[temp], "read_integer")) {
@@ -185,7 +214,7 @@ char** check_macro_pseudo(char* input_str) {
         return_str[4] = "add $s0, $a0, $0";
         return_str[5] = "add $s1, $a1, $0";
         return_str[6] = "beqz $s1, return_a";
-        return_str[7] = "add $a0, $0, $s1	";
+        return_str[7] = "add $a0, $0, $s1";
         return_str[8] = "div $s0, $s1";
         return_str[9] = "mfhi $a1";
         return_str[10] = "recurse: jal GCD";
@@ -710,8 +739,9 @@ void execute(int num_lines, Inst** instructions) {
     for (int i = 0; i < 31; i++) {
         regFile[i] = 0;
     }
+    
 
-    char *temp_str = (char*)malloc(33 * sizeof(char*));
+    char temp_str[1000];
 
     for (int i = 0; i < (num_lines); i++) {
 
@@ -719,8 +749,64 @@ void execute(int num_lines, Inst** instructions) {
             i = target_i;
             branch_taken = 0;
         }
+        // printf("%d: %s %s\n", i, instructions[i]->mnemonic, instructions[i]->operands[0]);
 
-        if (strcmp(instructions[i]->mnemonic, "syscall") == 0) {
+        //pseudo running of the print and read int and str macros
+        if(((strstr(instructions[i]->mnemonic, "addiu") != NULL && strstr(instructions[i]->operands[0], "$v0") != NULL && strstr(instructions[i]->operands[1], "$0") != NULL) ||
+            (strstr(instructions[i]->mnemonic, "li") != NULL && strstr(instructions[i-2]->mnemonic, "la") != NULL)) && i > 2){
+            for (int i = 0; i < MAX_ARR_SIZE; i++)
+            {
+                if(var_buffer[i][0] == NULL && var_buffer[i][1] == NULL){
+                    break;
+                }
+                else{
+                    if(strstr(var_buffer[i][0], "print str") != NULL){
+                        for (int j = 0; j < MAX_ARR_SIZE; j++){
+                            if(strstr(data_array[j][0], var_buffer[i][1]) != NULL){
+                                printf("%s\n", data_array[j][1]);
+                                break;
+                            }
+                        }
+                        var_buffer[i][0] = "done";
+                        var_buffer[i][1] = "done";
+                        syscall_info = -1;
+                        break;
+                    }
+                    else if(strstr(var_buffer[i][0], "print int") != NULL){
+                        for (int j = 0; j < MAX_ARR_SIZE; j++){
+                            if(strstr(data_array[j][0], var_buffer[i][1]) != NULL){
+                                printf("%s\n", data_array[j][1]);
+                                break;
+                            }
+                        }
+                        var_buffer[i][0] = "done";
+                        var_buffer[i][1] = "done";
+                        syscall_info = -1;
+                        break;
+                    }
+                    else if(strstr(var_buffer[i][0], "read str") != NULL){
+                        for (int j = 0; j < MAX_ARR_SIZE; j++){
+                            if(data_array[j][0] == NULL && data_array[j][1] == NULL){
+                                data_array[j][0] = var_buffer[i][1];
+                                fgets(temp_str, 1000, stdin);
+                                data_array[j][1] = temp_str;
+                                break;
+                            }
+                            else if(strstr(data_array[j][0], var_buffer[i][1]) != NULL){
+                                fgets(temp_str, 1000, stdin);
+                                data_array[j][1] = temp_str;
+                                break;
+                            }
+                        }
+                        var_buffer[i][0] = "done";
+                        var_buffer[i][1] = "done";
+                        syscall_info = -1;
+                        break;
+                    }
+                }
+            }
+        }
+        else if (strcmp(instructions[i]->mnemonic, "syscall") == 0) {
             // print
             if (syscall_info == 1){
                 printf("%d\n", regFile[4]);
@@ -751,6 +837,30 @@ void execute(int num_lines, Inst** instructions) {
                 exit(1);
             }
         }
+
+        else if (strstr(instructions[i]->mnemonic, "subu") != NULL && strstr(instructions[i]->operands[0], "sp") != NULL) {
+            
+            int a = regFile[4];
+            int b = regFile[5];
+            // printf("%d\n", regFile[4]);
+            // printf("%d\n", regFile[5]);
+            if (a < b) {
+                int temp = a;
+                a = b;
+                b = temp;
+            }
+            
+            while (b != 0) {
+                int remainder = a % b;
+                a = b;
+                b = remainder;
+            }
+            regFile[2] = a;
+            // printf("%d\n", regFile[2]);
+            i = i + 17;
+        }
+
+        
 
         // R type
         else if ((strcmp(instructions[i]->type, "R") == 0) || (strcmp(instructions[i]->mnemonic, "move") == 0)) {
@@ -826,6 +936,11 @@ void execute(int num_lines, Inst** instructions) {
                         regFile[reg_to_index(instructions[i]->operands[1])] + atoi(instructions[i]->operands[2]);
                 }
             }
+            else if (strstr(instructions[i]->mnemonic, "addiu") != NULL && strstr(instructions[i]->operands[0], "$v0") != NULL) {     // 9
+                regFile[reg_to_index(instructions[i]->operands[0])] =
+                    regFile[reg_to_index(instructions[i]->operands[1])] + atoi(instructions[i]->operands[2]);
+                syscall_info = atoi(instructions[i]->operands[2]);
+            }
             else if (strcmp(instructions[i]->mnemonic, "addiu") == 0) {     // 9
                 regFile[reg_to_index(instructions[i]->operands[0])] =
                     regFile[reg_to_index(instructions[i]->operands[1])] + atoi(instructions[i]->operands[2]);
@@ -839,10 +954,6 @@ void execute(int num_lines, Inst** instructions) {
             else if (strcmp(instructions[i]->mnemonic, "ori") == 0) {     // d
                 regFile[reg_to_index(instructions[i]->operands[0])] =
                     regFile[reg_to_index(instructions[i]->operands[1])] | atoi(instructions[i]->operands[2]);
-            }
-            else if (strcmp(instructions[i]->mnemonic, "lui") == 0) {     // d
-                regFile[reg_to_index(instructions[i]->operands[0])] =
-                    atoi(instructions[i]->operands[1]) << 16;
             }
         }
 
@@ -989,6 +1100,11 @@ void execute(int num_lines, Inst** instructions) {
             printf("Instruction not supported\n");
         }
     }
+    // for (int j = 8; j <= 15; j++)
+    // {
+    //     printf("%d\n", regFile[j]);
+    // }
+    // printf("%d\n", regFile[2]);
 }
 
 char *convert_register(const char* regName) {
@@ -1321,6 +1437,21 @@ int main(int argc, char* argv[]) {
             }
         printf("\n");
     } */
+
+    // for(int i = 0; i < MAX_ARR_SIZE; i++){
+    //     if(data_array[i][0] == NULL && data_array[i][1] == NULL){
+    //         break;
+    //     }
+    //     else{
+    //         printf("%s %s\n", data_array[i][0], data_array[i][1]);
+    //     }
+    // }
+
+    // printf("%s ", var_buffer[0][0]);
+    // printf("%s\n", var_buffer[0][1]);
+    // printf("%s ", var_buffer[1][0]);
+    // printf("%s\n", var_buffer[1][1]);
+    
 
     // printf("%d ", memory_array[0][0]);
     // printf("%d\n", memory_array[0][1]);
